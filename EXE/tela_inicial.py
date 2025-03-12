@@ -12,13 +12,18 @@ class TelaPrincipal:
         self.root.title("CADASTRO DE PRODUTOS - V1.0")
         self.centralizar_janela(500, 350)  # Ajuste a altura para acomodar o relógio
 
-        # Adicionar ícone à janela
         try:
-            self.root.iconbitmap("icone.ico")  # Substitua "icone.ico" pelo caminho do seu ícone
-            # Forçar o ícone na barra de tarefas (Windows)
-            self.root.tk.call('wm', 'iconphoto', self.root._w, tk.PhotoImage(file="icone.png"))
+            # Para Windows
+            self.root.iconbitmap("icone.ico")  # Substitua pelo caminho do seu ícone .ico
         except Exception as e:
-            print(f"Erro ao carregar o ícone: {e}")  # Mensagem de erro se o ícone não for encontrado
+            print(f"Erro ao carregar o ícone .ico: {e}")
+
+        try:
+            # Para sistemas Unix-like (Linux, macOS)
+            icon = tk.PhotoImage(file="icone.png")  # Substitua pelo caminho do seu ícone .png
+            self.root.tk.call('wm', 'iconphoto', self.root._w, icon)
+        except Exception as e:
+            print(f"Erro ao carregar o ícone .png: {e}")
 
         # Menu superior
         menu_superior = tk.Menu(root)
