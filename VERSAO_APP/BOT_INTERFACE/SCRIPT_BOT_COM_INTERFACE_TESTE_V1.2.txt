@@ -1,0 +1,192 @@
+import warnings
+import pandas as pd
+from openpyxl import load_workbook
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from tkinter import StringVar
+
+# Suprimir o warning específico do openpyxl
+warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
+
+# Função para executar o processamento de dados da planilha
+def executar_processamento(planilha_origem, planilha_destino):
+    # Ler os dados da planilha de origem
+    df = pd.read_excel(planilha_origem)
+
+    # Criar listas de DataFrames para cada aba
+    dados_sheets = {
+        "PRODUTO": [],
+        "PRECO": [],
+        "LOJA WEB": [],
+        "KIT": [],
+        "VOLUME": []
+    }
+
+    # Criar dicionário {EAN: Nome do Produto}
+    produto_dict = {str(row["EAN"]).strip(): row["NOMEONCLICK"] if pd.notna(row["NOMEONCLICK"]) else "Nome Desconhecido" for _, row in df.iterrows()}
+
+    # Criar conjunto para armazenar a marca cadastrada
+    marcas_cadastradas = set()
+
+    for _, row in df.iterrows():
+        ean = str(row["EAN"]).strip()
+        tipo_produto = row["TIPODEPRODUTO"].strip().upper()
+        descricao = row["PRODUTO"]
+        quantidade = row["QTDECOMPONENTES"]
+        cor = row["COR"]
+        altura = row["EMBALTURA"]
+        largura = row["EMBLARGURA"]
+        comprimento = row["EMBCOMPRIMENTO"]
+        volumes = int(row["VOLUMES"]) if pd.notna(row["VOLUMES"]) else 1  # Garante que tenha pelo menos 1 volume
+        componentes = row["EANCOMPONENTES"]
+        marca = row["MARCA"]
+        custo = row["CUSTO"]
+        preco_venda = row["DE"]
+        preco_promo = row["POR"]
+        fornecedor = row["FORNECEDOR"]
+        outros = row["OUTROS"]
+        ncm = row["NCM"]
+        cod_forn = row["CODFORN"]
+        nome_onclick = row["NOMEONCLICK"]
+        categoria = row["CATEGORIA"]
+        grupo = row["GRUPO"]
+        nome_ecommerce = row["NOMEE-COMMERCE"]
+        disponibilidade_web = row["DISPONIBILIDADEWEB"]
+        descricao_html = row["DESCRICAOHTML"]
+        peso_bruto = row["PESOBRUTO"]
+        peso_liquido = row["PESOLIQUIDO"]
+        vol_peso_bruto = row["VOLPESOBRUTO"]
+        vol_peso_liquido = row["VOLPESOLIQ"]
+        vol_largura = row["VOLLARGURA"]
+        vol_altura = row["VOLALTURA"]
+        vol_comprimento = row["VOLCOMPRIMENTO"]
+
+        tipo_produto_valor = 0 if tipo_produto == "PRODUTO ACABADO" else 2
+
+        # Regra: Nome do produto (5ª coluna) com apenas 25 caracteres
+        nome_reduzido = nome_onclick[:25] if isinstance(nome_onclick, str) else ""
+
+        # Adicionar marca ao conjunto
+        marcas_cadastradas.add(marca)
+
+        # Definição de pesos e medidas (Regra de volume)
+        if volumes == 1:
+            peso_bruto_final = peso_bruto
+            peso_liquido_final = peso_liquido
+            largura_final = largura
+            altura_final = altura
+            comprimento_final = comprimento
+        else:
+            peso_bruto_final = vol_peso_bruto
+            peso_liquido_final = vol_peso_liquido
+            largura_final = vol_largura
+            altura_final = vol_altura
+            comprimento_final = vol_comprimento
+
+        # Adicionar dados ao dicionário de listas
+        dados_sheets["PRODUTO"].append([ 
+            ean, cod_forn, tipo_produto_valor, nome_onclick, nome_reduzido, nome_onclick, nome_onclick, "",
+            marca, categoria, grupo, "", "", nome_ecommerce, cor, "", "F", "F", "F", "", volumes,
+            peso_bruto_final, peso_liquido_final, largura_final, altura_final, comprimento_final, "", 90, 1000,
+            disponibilidade_web, "F", "F", ncm, "", "0", "T", "F", "F", "NAO", nome_ecommerce, marca, "90 dias após o recebimento do produto", disponibilidade_web,
+            descricao_html, "F", "F"
+        ]) 
+
+        if tipo_produto == "KIT" and pd.notna(componentes):
+            for comp in str(componentes).split("/"):
+                comp_ean = comp.strip()
+                nome_componente = produto_dict.get(comp_ean, "Desconhecido")
+                dados_sheets["KIT"].append([ean, comp_ean, nome_componente, "1", "", "0"])
+
+        # Adicionar volumes (Agora inclui produtos com apenas 1 volume)
+        for i in range(volumes):
+            dados_sheets["VOLUME"].append([ 
+                ean, nome_onclick, peso_bruto_final, peso_liquido_final, largura_final, altura_final, "",
+                comprimento_final, "", "BOX", "T", i + 1
+            ]) 
+
+        dados_sheets["PRECO"].append([ 
+            ean, fornecedor, custo, outros, "", "", row["CUSTOTOTAL"], preco_venda, preco_promo, preco_promo, "", "", "", "F"
+        ]) 
+
+        dados_sheets["LOJA WEB"].append([ 
+            ean, "", "", "", row["CATEGORIAPRINCIPALTRAY"], "", "", "", "T", "T", "", "", "",
+            row["CATEGORIAPRINCIPALCORP"], row["NIVELADICIONAL1CORP"], "", "", "T", "T"
+        ]) 
+
+    # Carregar a planilha original mantendo formatação
+    wb = load_workbook(planilha_destino)
+
+    # Sobrescrever os dados mantendo formatação
+    for sheet_name, data in dados_sheets.items():
+        ws = wb[sheet_name]
+
+        # Definir linha inicial dependendo da aba
+        if sheet_name == "PRODUTO":
+            start_row = 3  # Para a aba PRODUTO, começa na linha 3
+        else:
+            start_row = 2  # Para as outras abas, começa na linha 2
+
+        # Limpar apenas os dados (não os cabeçalhos)
+        for row in ws.iter_rows(min_row=start_row, max_row=ws.max_row):
+            for cell in row:
+                cell.value = None
+
+        # Escrever os novos dados
+        for i, row_data in enumerate(data, start=start_row):
+            for j, value in enumerate(row_data, start=1):
+                ws.cell(row=i, column=j, value=value)
+
+    # Gerar o nome do novo arquivo com a marca
+    if marcas_cadastradas:
+        marca_unica = next(iter(marcas_cadastradas))  # Obtém a única marca do conjunto
+        novo_nome_arquivo = f"Template_Produtos_Mpozenato_CADASTRO_{marca_unica}.xlsx"
+        wb.save(novo_nome_arquivo)
+
+    return novo_nome_arquivo
+
+
+# Função que abre a interface para seleção de arquivos
+def selecionar_arquivos():
+    # Seleciona o arquivo de origem
+    planilha_origem = filedialog.askopenfilename(title="SELECIONE PLANILHA ONLINE", filetypes=(("Arquivos Excel", "*.xlsx"), ("Todos os arquivos", "*.*")))
+
+    if planilha_origem:
+        # Seleciona o arquivo de destino
+        planilha_destino = filedialog.askopenfilename(title="SELECIONE MODELO", filetypes=(("Arquivos Excel", "*.xlsx"), ("Todos os arquivos", "*.*")))
+
+        if planilha_destino:
+            try:
+                # Chama a função de processamento
+                novo_arquivo = executar_processamento(planilha_origem, planilha_destino)
+                messagebox.showinfo("Sucesso", f"Cadastro realizado com sucesso!\nNovo arquivo: {novo_arquivo}")
+
+                # Adicionar botão de fechar após a importação
+                fechar_botao.pack(pady=10)
+
+            except Exception as e:
+                messagebox.showerror("Erro", f"Ocorreu um erro durante o processamento: {e}")
+        else:
+            messagebox.showwarning("Atenção", "Nenhum arquivo de modelo selecionado.")
+    else:
+        messagebox.showwarning("Atenção", "Nenhum arquivo de origem selecionado.")
+
+
+# Função para fechar a janela
+def fechar_janela():
+    root.quit()
+
+# Interface gráfica com Tkinter
+root = tk.Tk()
+root.title("CADASTRO PRODUTOS V1.0")
+root.geometry("400x200")
+
+# Botão para selecionar os arquivos e realizar o processamento
+botao_selecionar = tk.Button(root, text="IMPORTAR DADOS PLANILHA ONLINE", command=selecionar_arquivos)
+botao_selecionar.pack(pady=50)
+
+# Botão de fechar (inicialmente oculto)
+fechar_botao = tk.Button(root, text="FECHAR", command=fechar_janela)
+fechar_botao.pack_forget()
+
+root.mainloop()

@@ -1,0 +1,88 @@
+# Documentação do Sistema de Cadastro de Produtos - Versão 1.0
+
+## Sumário
+1. Visão Geral
+2. Requisitos do Sistema
+3. Funcionalidades
+4. Instalação e Configuração
+5. Uso do Sistema
+6. Manutenção e Suporte
+7. Referências
+
+---
+
+## Visão Geral
+O **Sistema de Cadastro de Produtos** é uma aplicação desktop desenvolvida para automatizar o processo de preenchimento de planilhas e extração de atributos de produtos. A ferramenta foi projetada para facilitar a gestão de dados de produtos, reduzindo o tempo gasto em tarefas manuais e minimizando erros.
+
+### Objetivos
+- Automatizar o preenchimento de planilhas.
+- Extrair atributos de produtos de forma eficiente.
+- Fornecer uma interface intuitiva para o usuário.
+
+### Público-Alvo
+- Equipes de cadastro de produtos.
+- Analistas de dados.
+- Desenvolvedores que precisam integrar ou manter o sistema.
+
+---
+
+## Requisitos do Sistema
+
+### Requisitos Funcionais
+1. **Janela Principal**:
+   - Exibir opções para extração de atributos e cadastro de produtos.
+   - Fornecer um menu superior com opções de sair e sobre.
+2. **Extração de Atributos**:
+   - Permitir a extração de atributos de produtos.
+3. **Cadastro de Produtos**:
+   - Permitir o preenchimento de planilhas com dados de produtos.
+4. **Sobre**:
+   - Exibir informações sobre o sistema e o desenvolvedor.
+
+### Requisitos Não Funcionais
+1. **Interface**:
+   - Interface gráfica amigável e responsiva.
+2. **Desempenho**:
+   - Tempo de resposta inferior a 2 segundos para todas as operações.
+3. **Compatibilidade**:
+   - Funcionar em sistemas Windows, Linux e macOS.
+4. **Segurança**:
+   - Não armazenar dados sensíveis localmente.
+
+### Requisitos Técnicos
+- **Linguagem**: Python 3.x
+- **Bibliotecas**: `tkinter`, `messagebox`, `ttk`
+- **Dependências**: Módulos personalizados (`Extracao_Atributos.py`, `Cadastro_Produto.py`).
+
+---
+
+## Funcionalidades
+
+### Janela Principal
+- **Menu Superior**:
+  - **Arquivo > Sair**: Fecha a aplicação.
+  - **Ajuda > Sobre**: Exibe informações sobre o sistema.
+  - **Ajuda > Documentação**: Exibe a documentação do sistema.
+- **Botões**:
+  - **EXTRAIR ATRIBUTOS**: Abre a janela de extração de atributos.
+  - **PREENCHER PLANILHA ATHUS**: Abre a janela de cadastro de produtos.
+  - **FECHAR**: Fecha a aplicação.
+
+### Extração de Atributos
+- Extrai os principais atributos de produtos e exibe os resultados em uma nova janela.
+
+### Cadastro de Produtos
+- Permite o preenchimento de planilhas com dados de produtos.
+
+---
+
+## Instalação e Configuração
+
+### Pré-requisitos
+- Python 3.x instalado.
+- Bibliotecas `tkinter` e `messagebox` (já incluídas na instalação padrão do Python).
+
+### Passos para Instalação
+1. Clone o repositório do projeto:
+   ```bash
+   git clone https://github.com/seu-usuario/sistema-cadastro-produtos.git

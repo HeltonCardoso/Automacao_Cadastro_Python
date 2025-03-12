@@ -1,0 +1,113 @@
+import warnings
+# Suprimir o warning específico do openpyxl
+warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
+
+import pandas as pd
+from openpyxl import load_workbook
+
+# Caminhos dos arquivos
+planilha_origem = 'Planilha_Preenchida.xlsx'
+planilha_destino = "Template_Produtos_Mpozenato_CADASTROTESTE.xlsx"
+
+# Ler os dados da planilha de origem
+df = pd.read_excel(planilha_origem)
+
+# Criar listas de DataFrames para cada aba
+dados_sheets = {
+    "PRODUTO": [],
+    "PRECO": [],
+    "LOJA WEB": [],
+    "KIT": [],
+    "VOLUME": []
+}
+
+# Criar dicionário {EAN: Nome do Produto}
+produto_dict = {str(row["EAN"]).strip(): row["NOMEONCLICK"] if pd.notna(row["NOMEONCLICK"]) else "Nome Desconhecido" for _, row in df.iterrows()}
+
+for _, row in df.iterrows():
+    ean = str(row["EAN"]).strip()
+    tipo_produto = row["TIPODEPRODUTO"].strip().upper()
+    descricao = row["PRODUTO"]
+    quantidade = row["QTDECOMPONENTES"]
+    cor = row["COR"]
+    altura = row["EMBALTURA"]
+    largura = row["EMBLARGURA"]
+    volumes = row["VOLUMES"]
+    componentes = row["EANCOMPONENTES"]
+    marca = row["MARCA"]
+    custo = row["CUSTO"]
+    preco_venda = row["DE"]
+    preco_promo = row["POR"]
+    fornecedor = row["FORNECEDOR"]
+    outros = row["OUTROS"]
+    ncm = row["NCM"]
+    cod_forn = row["CODFORN"]
+    nome_onclick = row["NOMEONCLICK"]
+    categoria = row["CATEGORIA"]
+    grupo = row["GRUPO"]
+    nome_ecommerce = row["NOMEE-COMMERCE"]
+    disponibilidade_web = row["DISPONIBILIDADEWEB"]
+    descricao_html = row["DESCRICAOHTML"]
+    
+    tipo_produto_valor = 0 if tipo_produto == "PRODUTO ACABADO" else 2
+
+    # Garantir que a coluna E (5ª coluna) tenha apenas os primeiros 25 caracteres
+    nome_reduzido = nome_onclick[:25] if nome_onclick else ""
+
+    # Adicionar dados ao dicionário de listas
+    dados_sheets["PRODUTO"].append([
+        ean, cod_forn, tipo_produto_valor, nome_onclick, nome_reduzido, nome_onclick, nome_onclick, "",
+        marca, categoria, grupo, "", "", nome_ecommerce, cor, "", "F", "F", "F", "", volumes,
+        row["PESOBRUTO"], row["PESOLIQUIDO"], largura, altura, row["EMBCOMPRIMENTO"], "", 90, 1000,
+        disponibilidade_web, "F", "F", ncm, "", "0", "T", "F", "F", "NAO", nome_ecommerce, marca, "90 dias após o recebimento do produto", disponibilidade_web,descricao_html, "F", "F"
+    ])
+
+    if tipo_produto == "KIT" and pd.notna(componentes):
+        for comp in str(componentes).split("/"):
+            comp_ean = comp.strip()
+            nome_componente = produto_dict.get(comp_ean, "Desconhecido")
+            dados_sheets["KIT"].append([ean, comp_ean, nome_componente, "1", "", "0"])
+
+    if pd.notna(volumes):
+        for i in range(int(volumes)):
+            dados_sheets["VOLUME"].append([
+                ean, nome_onclick, row["VOLPESOBRUTO"], row["VOLPESOLIQ"], row["VOLLARGURA"], row["VOLALTURA"], "",
+                row["VOLCOMPRIMENTO"], "", "BOX", "T", i + 1
+            ])
+
+    dados_sheets["PRECO"].append([
+        ean, fornecedor, custo, outros, "", "", row["CUSTOTOTAL"], preco_venda, preco_promo, preco_promo, "", "", "", "F"
+    ])
+
+    dados_sheets["LOJA WEB"].append([
+        ean, "", "", "", row["CATEGORIAPRINCIPALTRAY"], "", "", "", "T", "T", "", "", "",
+        row["CATEGORIAPRINCIPALCORP"], row["NIVELADICIONAL1CORP"], "", "", "T", "T"
+    ])
+
+# Carregar a planilha original mantendo formatação
+wb = load_workbook(planilha_destino)
+
+# Sobrescrever os dados mantendo formatação
+for sheet_name, data in dados_sheets.items():
+    ws = wb[sheet_name]
+    
+    # Definir linha inicial dependendo da aba
+    if sheet_name == "PRODUTO":
+        start_row = 3  # Para a aba PRODUTO, começa na linha 3
+    else:
+        start_row = 2  # Para as outras abas, começa na linha 2
+
+    # Limpar apenas os dados (não os cabeçalhos)
+    for row in ws.iter_rows(min_row=start_row, max_row=ws.max_row):
+        for cell in row:
+            cell.value = None
+
+    # Escrever os novos dados
+    for i, row_data in enumerate(data, start=start_row):
+        for j, value in enumerate(row_data, start=1):
+            ws.cell(row=i, column=j, value=value)
+
+# Salvar a planilha com os novos dados
+wb.save(planilha_destino)
+
+print("PLANILHA PREENCHIDA COM SUCESSO!!!")

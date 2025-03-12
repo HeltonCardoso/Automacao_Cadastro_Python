@@ -1,0 +1,109 @@
+import warnings
+import pandas as pd
+from openpyxl import load_workbook
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+def processar_arquivos(planilha_origem, planilha_destino):
+    try:
+        # Suprimir warning específico do openpyxl
+        warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
+        
+        # Ler os dados da planilha de origem
+        df = pd.read_excel(planilha_origem)
+
+        # Criar listas de DataFrames para cada aba
+        dados_sheets = {"PRODUTO": [], "PRECO": [], "LOJA WEB": [], "KIT": [], "VOLUME": []}
+        
+        # Criar dicionário {EAN: Nome do Produto}
+        produto_dict = {str(row["EAN"]).strip(): row["NOMEONCLICK"] if pd.notna(row["NOMEONCLICK"]) else "Nome Desconhecido" for _, row in df.iterrows()}
+        
+        # Criar conjunto para armazenar a marca cadastrada
+        marcas_cadastradas = set()
+
+        for _, row in df.iterrows():
+            ean = str(row["EAN"]).strip()
+            tipo_produto = row["TIPODEPRODUTO"].strip().upper()
+            nome_onclick = row["NOMEONCLICK"]
+            marca = row["MARCA"]
+            volumes = int(row["VOLUMES"]) if pd.notna(row["VOLUMES"]) else 1
+            componentes = row["EANCOMPONENTES"]
+
+            # Adicionar marca ao conjunto
+            marcas_cadastradas.add(marca)
+            
+            # Adicionar produto
+            dados_sheets["PRODUTO"].append([ean, nome_onclick, marca])
+            
+            # Adicionar kit
+            if tipo_produto == "KIT" and pd.notna(componentes):
+                for comp in str(componentes).split("/"):
+                    comp_ean = comp.strip()
+                    nome_componente = produto_dict.get(comp_ean, "Desconhecido")
+                    dados_sheets["KIT"].append([ean, comp_ean, nome_componente])
+            
+            # Adicionar volumes
+            for i in range(volumes):
+                dados_sheets["VOLUME"].append([ean, nome_onclick, i + 1])
+        
+        # Carregar a planilha original mantendo formatação
+        wb = load_workbook(planilha_destino)
+        
+        # Preencher as abas
+        for sheet_name, data in dados_sheets.items():
+            ws = wb[sheet_name]
+            start_row = 3 if sheet_name == "PRODUTO" else 2
+            
+            # Limpar dados antigos
+            for row in ws.iter_rows(min_row=start_row, max_row=ws.max_row):
+                for cell in row:
+                    cell.value = None
+            
+            # Escrever novos dados
+            for i, row_data in enumerate(data, start=start_row):
+                for j, value in enumerate(row_data, start=1):
+                    ws.cell(row=i, column=j, value=value)
+        
+        # Salvar planilha
+        wb.save(planilha_destino)
+        messagebox.showinfo("Sucesso", "Cadastro realizado com sucesso!")
+    except Exception as e:
+        messagebox.showerror("Erro", f"Ocorreu um erro: {str(e)}")
+
+# Criar interface gráfica
+root = tk.Tk()
+root.title("Cadastro de Produtos")
+root.geometry("400x200")
+
+def selecionar_origem():
+    arquivo = filedialog.askopenfilename(filetypes=[("Arquivos Excel", "*.xlsx")])
+    entrada_origem.delete(0, tk.END)
+    entrada_origem.insert(0, arquivo)
+
+def selecionar_destino():
+    arquivo = filedialog.askopenfilename(filetypes=[("Arquivos Excel", "*.xlsx")])
+    entrada_destino.delete(0, tk.END)
+    entrada_destino.insert(0, arquivo)
+
+def iniciar():
+    planilha_origem = entrada_origem.get()
+    planilha_destino = entrada_destino.get()
+    if not planilha_origem or not planilha_destino:
+        messagebox.showwarning("Atenção", "Selecione os arquivos antes de continuar.")
+    else:
+        processar_arquivos(planilha_origem, planilha_destino)
+
+# Layout
+tk.Label(root, text="Planilha de Origem:").pack()
+entrada_origem = tk.Entry(root, width=50)
+entrada_origem.pack()
+tk.Button(root, text="Selecionar", command=selecionar_origem).pack()
+
+tk.Label(root, text="Planilha de Destino:").pack()
+entrada_destino = tk.Entry(root, width=50)
+entrada_destino.pack()
+tk.Button(root, text="Selecionar", command=selecionar_destino).pack()
+
+tk.Button(root, text="Iniciar Cadastro", command=iniciar).pack()
+
+root.mainloop()

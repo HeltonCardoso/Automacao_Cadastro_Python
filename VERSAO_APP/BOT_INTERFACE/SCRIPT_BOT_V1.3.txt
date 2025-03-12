@@ -1,0 +1,102 @@
+import pandas as pd
+
+# Caminhos dos arquivos
+planilha_origem = 'Planilha_Preenchida.xlsx'
+planilha_destino = "Planilha_vazia_completa.xlsx"
+
+# Ler os dados da planilha de origem
+df = pd.read_excel(planilha_origem)
+
+# Criar um dicionário {EAN: Nome do Produto}
+produto_dict = {str(row["EAN"]).strip(): row["PRODUTO"] for _, row in df.iterrows()}
+
+# Criar listas para armazenar os dados
+produto_lista = []
+kit_lista = []
+volume_lista = []
+preco_lista = []
+loja_web_lista = []
+
+for _, row in df.iterrows():
+    ean = str(row["EAN"]).strip()  # Garantir que o EAN é uma string sem espaços
+    tipo_produto = row["TIPODEPRODUTO"]
+    descricao = row["PRODUTO"]
+    quantidade = row["QTDECOMPONENTES"]
+    cor = row["COR"]
+    altura = row["EMBALTURA"]
+    largura = row["EMBLARGURA"]
+    volumes = row["VOLUMES"]
+    componentes = row["EANCOMPONENTES"]  # Pode ter valores separados por "/"
+    marca = row["MARCA"]
+    custo = row["CUSTO"]
+    preco_venda = row["POR"]
+    preco_promo = row["DE"]
+    
+    # Outros dados das colunas
+    cod_forn = row["CODFORN"]
+    nome_onclick = row["NOMEONCLICK"]
+    categoria = row["CATEGORIA"]
+    grupo = row["GRUPO"]
+    nome_ecommerce = row["NOMEE-COMMERCE"]
+    disponibilidade_web = row["DISPONIBILIDADEWEB"]
+    descricao_html = row["DESCRICAOHTML"]
+    
+    # Corrigir o Tipo de Produto
+    tipo_produto_valor = 0 if tipo_produto.strip().upper() == "PRODUTO ACABADO" else 2
+
+    # Adicionar todos os dados na lista de produto
+    produto_lista.append([ 
+        ean, cod_forn, tipo_produto_valor, nome_onclick, nome_onclick, nome_onclick, nome_onclick, "", 
+        marca, categoria, grupo, "", "", nome_ecommerce, cor, "", "F", "F", "F", "", volumes, 
+        row["PESOBRUTO"], row["PESOLIQUIDO"], largura, altura, row["EMBCOMPRIMENTO"], "", 90, 1000, 
+        disponibilidade_web, "F", "F", "","", "T", "F", "F","","NAO", nome_ecommerce, marca, 90, disponibilidade_web, 
+        descricao_html, "F", "F"
+    ])
+    
+    # Adicionar ao Kit se for um kit
+    if tipo_produto.strip().upper() == "KIT" and pd.notna(componentes):
+        componentes_lista = str(componentes).split("/")  # Dividir componentes
+        for comp in componentes_lista:
+            comp_ean = comp.strip()
+            nome_componente = produto_dict.get(comp_ean, "Desconhecido")  # Buscar nome do componente
+            kit_lista.append([ean, comp_ean, nome_componente])  # Adicionar nome do kit e do componente
+
+    # Adicionar ao Volume se houver mais de um volume
+    if pd.notna(volumes):
+        for i in range(int(volumes)):  # Criar linha para cada volume
+            volume_lista.append([ean, descricao, row["VOLPESOBRUTO"], row["VOLPESOLIQ"], largura, altura, i + 1])
+
+    # **Correção: Ajustando para garantir que o número de colunas corresponda com o esperado**
+    # Adicionar ao Preço com 7 colunas
+    preco_lista.append([ean, nome_onclick, marca, custo, row["CUSTOTOTAL"], preco_venda, preco_promo])  # Agora com 7 colunas
+
+    # Adicionar à Loja Web
+    loja_web_lista.append([ean, row["CATEGORIAPRINCIPALTRAY"], row["CATEGORIAPRINCIPALCORP"], row["NIVELADICIONAL1CORP"]])
+
+# Criar DataFrames para salvar na planilha vazia
+df_produto = pd.DataFrame(produto_lista, columns=[
+    "EAN", "CODIGO FABRICANTE", "TIPO", "DESCRICAO COMPLETA", "DESCRICAO REDUZIDA", "DESCRICAO COMPRA", "DESCRICAO ETIQUETA", "OBSERVACAO",
+    "MARCA", "CATEGORIA", "GRUPO", "SUBGRUPO", "GRUPO3", "Nome E-Commerce", "COR", "INFORMACOES DO PRODUTO", "IMPRIMIR COMPLEMENTO NF", 
+    "IMPRIMIR COMPLEMENTO PV", "IMPRIMIR COMPLEMENTO PC", "TAMANHO", "VOLUMES", "PESO BRUTO KG", "PESO LIQUIDO KG", "LARGURA CM", "ALTURA CM", 
+    "COMPRIMENTO CM", "DIAMETRO", "GARANTIA DIAS", "ESTOQUE SEGURANCA", "DISPONIBILIDADE WEB", "UTILIZA EMBALAGEM PROPRIA", "PRODUTO INATIVO", 
+    "NCM", "CEST", "ORIGEM DA MERCADORIA", "PROD MERCADO INTERNO", "CFOP COM SUB", "CFOP FABRICACAO PROPRIA", "CONTROLA VOLUME", 
+    "DESCRICAO WEB", "MARCA", "GARANTIA", "DISPONIBILIDADE WEB", "DESCRICAO HTML", "DESTAQUE WEB", "LANCAMENTO WEB"
+])
+
+df_preco = pd.DataFrame(preco_lista, columns=["EAN", "Nome", "Fornecedor", "Custo", "Custo Total", "Preço de Venda", "Preço Promoção"])
+
+df_loja_web = pd.DataFrame(loja_web_lista, columns=["EAN", "Categoria Principal Tray", "Categoria Principal Corp", "Nível Adicional Corp"])
+
+df_kit = pd.DataFrame(kit_lista, columns=["EAN", "EAN Componente", "Nome OnClick"])
+
+df_volume = pd.DataFrame(volume_lista, columns=["EAN", "Nome OnClick", "Vol Peso Bruto", "Vol Peso Líquido", "Vol Largura", "Vol Comprimento", "Volume Nº"])
+
+# Escrever na planilha de destino
+with pd.ExcelWriter(planilha_destino, engine="openpyxl") as writer:
+    df_produto.to_excel(writer, sheet_name="PRODUTO", index=False)
+    df_preco.to_excel(writer, sheet_name="PRECO", index=False)
+    df_loja_web.to_excel(writer, sheet_name="LOJA WEB", index=False)
+    df_kit.to_excel(writer, sheet_name="KIT", index=False)
+    df_volume.to_excel(writer, sheet_name="VOLUME", index=False)
+
+print("Planilha preenchida com sucesso!")

@@ -1,0 +1,154 @@
+import re
+import pandas as pd
+import os
+from bs4 import BeautifulSoup
+import tkinter as tk
+from tkinter import filedialog, messagebox
+from tkinter.ttk import Progressbar
+
+def extrair_atributos(descricao_html):
+    atributos = {
+        "Largura": "", "Altura": "", "Profundidade": "", "Peso": "", "Cor": "", "Modelo": "", "Fabricante": "",
+        "Volumes": "", "Material da Estrutura": "", "Peso Suportado": "", "Acabamento": "", "Possui Portas": "",
+        "Quantidade de Portas": "", "Tipo de Porta": "", "Possui Prateleiras": "", "Quantidade de Prateleiras": "",
+        "Conteúdo da Embalagem": "", "Quantidade de Gavetas": "", "Possui Gavetas": ""
+    }
+    
+    if pd.notna(descricao_html):
+        soup = BeautifulSoup(descricao_html, "html.parser")
+        texto_limpo = soup.get_text()
+    else:
+        texto_limpo = ""
+
+    # Expressões regulares para capturar atributos individuais
+    regex_padroes = {
+        "Largura": r"Largura[:\s]*([\d,\.]+)\s*cm?",
+        "Altura": r"Altura[:\s]*([\d,\.]+)\s*cm?",
+        "Profundidade": r"Profundidade[:\s]*([\d,\.]+)\s*cm?",
+        "Peso": r"Peso[:\s]*([\d,\.]+)\s*kg?",
+        "Volumes": r"Volumes[:\s]*(\d+)",
+        "Material da Estrutura": r"Material da Estrutura[:\s]*([\w\s]+)",
+        "Acabamento": r"Acabamento[:\s]*([\w\s]+)",
+        "Possui Portas": r"Possui Portas[:\s]*(Sim|Não)",
+        "Quantidade de Portas": r"Quantidade de Portas[:\s]*(\d+)",
+        "Tipo de Porta": r"Tipo de Porta[:\s]*([\w\s]+)",
+        "Possui Prateleiras": r"Possui Prateleiras[:\s]*(Sim|Não)",
+        "Quantidade de Prateleiras": r"Quantidade de Prateleiras[:\s]*(\d+)",
+        "Conteúdo da Embalagem": r"Conteúdo da Embalagem[:\s]*([\w\s,]+)",
+        "Quantidade de Gavetas": r"Quantidade de Gavetas[:\s]*(\d+)",
+        "Possui Gavetas": r"Possui Gavetas[:\s]*(Sim|Não)"
+    }
+
+    # Expressão para capturar medidas no formato (L x A x P)
+    regex_medidas = r"\b(\d+[,\.]?\d*)\s*(?:cm)?\s*x\s*(\d+[,\.]?\d*)\s*(?:cm)?\s*x\s*(\d+[,\.]?\d*)\s*(?:cm)?\b"
+
+    # Busca padrões normais
+    for chave, padrao in regex_padroes.items():
+        match = re.search(padrao, texto_limpo, re.IGNORECASE)
+        if match:
+            valor = match.group(1).strip(" .")
+            if chave in ["Largura", "Altura", "Profundidade"]:
+                atributos[chave] = valor + " cm"
+            elif chave in ["Peso"]:
+                atributos[chave] = valor + " kg"
+            else:
+                atributos[chave] = valor
+
+    # Captura medidas gerais (L x A x P)
+    matches_medidas = re.findall(regex_medidas, texto_limpo, re.IGNORECASE)
+
+    larguras = []
+    alturas = []
+    profundidades = []
+
+    for match in matches_medidas:
+        larguras.append(float(match[0].replace(",", ".")))
+        alturas.append(float(match[1].replace(",", ".")))
+        profundidades.append(float(match[2].replace(",", ".")))
+
+    if larguras:
+        atributos["Largura"] = f"{max(larguras):.1f} cm"
+    if alturas:
+        atributos["Altura"] = f"{max(alturas):.1f} cm"
+    if profundidades:
+        atributos["Profundidade"] = f"{max(profundidades):.1f} cm"
+
+    # Captura todos os pesos suportados mencionados no texto e extrai o maior
+    matches_peso_suportado = re.findall(r"(\d+[,\.]?\d*)\s*kg", texto_limpo, re.IGNORECASE)
+    
+    if matches_peso_suportado:
+        pesos = [float(p.replace(",", ".")) for p in matches_peso_suportado]
+        atributos["Peso Suportado"] = f"{max(pesos):.1f} kg"
+
+    return atributos
+
+def selecionar_arquivo():
+    caminho = filedialog.askopenfilename(filetypes=[("Planilhas Excel", "*.xlsx")])
+    entrada_arquivo.delete(0, tk.END)
+    entrada_arquivo.insert(0, caminho)
+
+def extrair_dados():
+    caminho = entrada_arquivo.get()
+    if not caminho:
+        messagebox.showerror("Erro", "Selecione um arquivo primeiro!")
+        return
+    
+    try:
+        df = pd.read_excel(caminho)
+    except PermissionError:
+        messagebox.showerror("Erro", "Feche o arquivo e tente novamente!")
+        return
+    
+    dados_extraidos = []
+    colunas = [
+        "EAN", "Nome", "Largura", "Altura", "Profundidade", "Peso", "Cor", "Modelo", "Fabricante", "Volumes", 
+        "Material da Estrutura", "Peso Suportado", "Acabamento", "Possui Portas", "Quantidade de Portas", 
+        "Tipo de Porta", "Possui Prateleiras", "Quantidade de Prateleiras", "Conteúdo da Embalagem", 
+        "Quantidade de Gavetas", "Possui Gavetas"
+    ]
+    
+    for _, row in df.iterrows():
+        ean = str(row.get("EAN", "")).strip()
+        nome = row.get("NOMEE-COMMERCE", "Desconhecido")
+        descricao_html = row.get("DESCRICAOHTML", "")
+        modelo = str(row.get("MODMPZ", "")).strip()
+        cor = str(row.get("COR", "")).strip()
+        fabricante = nome.split("-")[-1].strip() if "-" in nome else ""
+        
+        atributos = extrair_atributos(descricao_html)
+        atributos["Cor"] = cor
+        atributos["Modelo"] = modelo
+        atributos["Fabricante"] = fabricante
+        
+        dados_extraidos.append([ean, nome] + list(atributos.values()))
+        progresso['value'] += 100 / len(df)
+        root.update_idletasks()
+    
+    df_saida = pd.DataFrame(dados_extraidos, columns=colunas)
+    arquivo_saida = os.path.join(os.path.dirname(caminho), "Atributos_Extraidos.xlsx")
+    
+    try:
+        df_saida.to_excel(arquivo_saida, index=False)
+        messagebox.showinfo("Sucesso", f"Atributos extraídos com sucesso!\nSalvo em: {arquivo_saida}")
+    except PermissionError:
+        messagebox.showerror("Erro", "Feche o arquivo de saída e tente novamente!")
+        return
+    
+# Criar interface
+root = tk.Tk()
+root.title("Extração de Atributos")
+root.geometry("400x300")
+
+frame = tk.Frame(root)
+frame.pack(pady=20)
+
+tk.Label(frame, text="Selecione a Planilha:").grid(row=0, column=0)
+entrada_arquivo = tk.Entry(frame, width=40)
+entrada_arquivo.grid(row=0, column=1)
+tk.Button(frame, text="Buscar", command=selecionar_arquivo).grid(row=0, column=2)
+
+tk.Button(root, text="Extrair Atributos", command=extrair_dados).pack(pady=10)
+progresso = Progressbar(root, orient="horizontal", length=300, mode="determinate")
+progresso.pack(pady=5)
+
+root.mainloop()

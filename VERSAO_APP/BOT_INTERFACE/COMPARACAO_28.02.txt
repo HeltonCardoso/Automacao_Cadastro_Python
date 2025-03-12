@@ -1,0 +1,253 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox, scrolledtext
+from tkinter.ttk import Progressbar
+import pandas as pd
+import os
+import csv
+
+class TelaComparacaoPrazos:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("VERIFICAÇÃO DE PRAZOS - MPOZENATO V1.0")
+        self.centralizar_janela(750, 460)
+
+        # Dicionário de mapeamento de colunas por marketplace
+        self.mapa_marketplaces = {
+            "Wake": {"cod_barra": "EAN",  # Coluna do marketplace
+                "prazo": "Prazo Manuseio (Dias)",  # Coluna do prazo
+                "chave_comparacao": "EAN",  # Chave de comparação (EAN ou SellerSku)
+                "prazo_erp": "DIAS P/ ENTREGA"  # Coluna de prazo no ERP
+            },
+            "Tray": {
+                "cod_barra": "EAN",
+                "prazo": "Disponibilidade",
+                "chave_comparacao": "EAN",
+                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP
+            },
+            "Shoppe": {
+                "cod_barra": "EAN_shoppe",
+                "prazo": "Disponibilidade_shoppe",
+                "chave_comparacao": "EAN",
+                "prazo_erp": "DIAS P/ ENTREGA"  # Coluna de prazo no ERP
+            },
+            "Mobly": {
+                "cod_barra": "SellerSku",  # Mobly usa SellerSku
+                "prazo": "SupplierDeliveryTime",
+                "chave_comparacao": "SellerSku",  # Chave de comparação é SellerSku
+                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP para Mobly
+            },
+        }
+
+        # Interface
+        frame = tk.Frame(self.root)
+        frame.pack(pady=20)
+
+        tk.Label(frame, text="PLANILHA ONCLICK:").grid(row=0, column=0)
+        self.entrada_erp = tk.Entry(frame, width=70)
+        self.entrada_erp.grid(row=0, column=1)
+        tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_erp)).grid(row=0, column=2)
+
+        tk.Label(frame, text="PLANILHA MARKETPLACE:").grid(row=1, column=0)
+        self.entrada_marketplace = tk.Entry(frame, width=70)
+        self.entrada_marketplace.grid(row=1, column=1)
+        tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_marketplace)).grid(row=1, column=2)
+
+        self.label_marketplace = tk.Label(self.root, text="Marketplace: Não identificado", fg="blue")
+        self.label_marketplace.pack(pady=5)
+
+        tk.Button(self.root, text="COMPARAR PRAZOS", command=self.abrir_mapeamento_colunas).pack(pady=10)
+
+        self.progresso = Progressbar(self.root, orient="horizontal", length=500, mode="determinate")
+        self.progresso.pack(pady=5)
+
+        self.status_label = tk.Label(self.root, text="Tela de log", fg="blue")
+        self.status_label.pack(pady=5)
+
+        self.log_area = scrolledtext.ScrolledText(self.root, width=70, height=10, state="disabled")
+        self.log_area.pack(pady=10)
+
+        tk.Button(self.root, text="FECHAR", command=self.root.destroy).pack(pady=10)
+
+    def centralizar_janela(self, largura, altura):
+        largura_tela = self.root.winfo_screenwidth()
+        altura_tela = self.root.winfo_screenheight()
+        pos_x = (largura_tela // 2) - (largura // 2)
+        pos_y = (altura_tela // 2) - (altura // 2)
+        self.root.geometry(f"{largura}x{altura}+{pos_x}+{pos_y}")
+
+    def selecionar_arquivo(self, entrada):
+        self.root.attributes('-topmost', False)
+        caminho = filedialog.askopenfilename(
+            parent=self.root,
+            filetypes=(("Arquivos Excel", "*.xlsx *.xls"), ("Arquivos CSV", "*.csv"), ("Todos os arquivos", "*.*"))
+        )
+        self.root.attributes('-topmost', True)
+
+        if caminho:
+            entrada.delete(0, tk.END)
+            entrada.insert(0, caminho)
+
+            if entrada == self.entrada_marketplace:
+                self.identificar_marketplace(caminho)
+
+    def identificar_marketplace(self, caminho):
+        try:
+            df = self.ler_arquivo(caminho)
+            colunas = df.columns.tolist()
+
+            for marketplace, colunas_mapeadas in self.mapa_marketplaces.items():
+                if colunas_mapeadas["prazo"] in colunas:
+                    self.label_marketplace.config(text=f"Marketplace: {marketplace}")
+                    return
+
+            self.label_marketplace.config(text="Marketplace: Não identificado")
+            messagebox.showwarning("Atenção", "Não foi possível identificar o marketplace. Verifique as colunas da planilha.", parent=self.root)
+        except Exception as e:
+            self.label_marketplace.config(text="Marketplace: Erro ao identificar")
+            messagebox.showerror("Erro", f"Erro ao identificar o marketplace: {e}", parent=self.root)
+
+    def ler_arquivo(self, caminho):
+        try:
+            if not os.path.exists(caminho):
+                raise ValueError(f"O arquivo '{caminho}' não existe.")
+            
+            if caminho.endswith('.csv'):
+                return pd.read_csv(caminho, delimiter=self.detectar_delimitador(caminho), encoding='latin1')
+            elif caminho.endswith(('.xls', '.xlsx')):
+                return pd.read_excel(caminho, engine='openpyxl' if caminho.endswith('.xlsx') else 'xlrd')
+            else:
+                raise ValueError("Formato de arquivo não suportado. Use .xls, .xlsx ou .csv.")
+        except Exception as e:
+            raise ValueError(f"Erro ao ler o arquivo: {e}")
+        
+
+    def detectar_delimitador(self, caminho):
+        with open(caminho, 'r', encoding='latin1') as file:
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(file.readline())
+            return dialect.delimiter
+
+    def log(self, mensagem):
+        self.log_area.config(state="normal")
+        self.log_area.insert(tk.END, mensagem + "\n")
+        self.log_area.config(state="disabled")
+        self.log_area.yview(tk.END)
+        self.root.update_idletasks()  # Força a atualização da interface gráfica
+
+    def comparar_prazos(self, planilha_erp, planilha_marketplace):
+        try:
+            self.log("Processando planilhas...")
+            self.progresso["value"] = 10
+            self.root.update_idletasks()
+
+            df_erp = self.ler_arquivo(planilha_erp)
+            df_marketplace = self.ler_arquivo(planilha_marketplace)
+
+            self.progresso["value"] = 20
+            self.root.update_idletasks()
+
+            marketplace = self.label_marketplace.cget("text").replace("Marketplace: ", "")
+            if marketplace not in self.mapa_marketplaces:
+                raise ValueError("Marketplace não identificado ou não suportado.")
+
+            mapeamento = self.mapa_marketplaces[marketplace]
+
+            # Verifica se as colunas necessárias existem no marketplace
+            if mapeamento["cod_barra"] not in df_marketplace.columns or mapeamento["prazo"] not in df_marketplace.columns:
+                raise ValueError(f"Colunas do marketplace não encontradas. Verifique se as colunas '{mapeamento['cod_barra']}' e '{mapeamento['prazo']}' existem.")
+
+            # Verifica se a coluna de prazo do ERP existe
+            if mapeamento["prazo_erp"] not in df_erp.columns:
+                raise ValueError(f"Coluna de prazo do ERP não encontrada. Verifique se a coluna '{mapeamento['prazo_erp']}' existe.")
+
+            self.log("Renomeando colunas...")
+            self.progresso["value"] = 30
+            self.root.update_idletasks()
+
+            # Define a coluna de comparação no ERP
+            coluna_chave_erp = "COD AUXILIAR" if marketplace == "Mobly" else "COD BARRA"
+
+            # Renomeia a coluna de comparação do marketplace para um nome padrão
+            df_marketplace.rename(columns={
+                mapeamento["cod_barra"]: "COD_COMPARACAO",  # Renomeia para um nome padrão
+                mapeamento["prazo"]: "DIAS P/ ENTREGA_MARKETPLACE"
+            }, inplace=True)
+
+            # Renomeia a coluna de prazo do ERP para um nome padrão
+            df_erp.rename(columns={
+                mapeamento["prazo_erp"]: "DIAS P/ ENTREGA_ERP"
+            }, inplace=True)
+
+            self.log("Convertendo códigos de barras SKU para string...")
+            self.progresso["value"] = 40
+            self.root.update_idletasks()
+
+            df_erp[coluna_chave_erp] = df_erp[coluna_chave_erp].astype(str)
+            df_marketplace["COD_COMPARACAO"] = df_marketplace["COD_COMPARACAO"].astype(str)
+
+            self.log("Realizando merge das planilhas...")
+            self.progresso["value"] = 50
+            self.root.update_idletasks()
+
+            # Realiza o merge usando a coluna correta
+            df_comparacao = pd.merge(df_erp, df_marketplace, left_on=coluna_chave_erp, right_on="COD_COMPARACAO", suffixes=("_ERP", "_MARKETPLACE"))
+
+            self.log("Convertendo colunas de prazo para números...")
+            self.progresso["value"] = 60
+            self.root.update_idletasks()
+
+            # Converter as colunas de prazo para números
+            df_comparacao["DIAS P/ ENTREGA_ERP"] = pd.to_numeric(df_comparacao["DIAS P/ ENTREGA_ERP"], errors="coerce")
+            df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"] = pd.to_numeric(df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"], errors="coerce")
+
+            # Preencher valores NaN com 0
+            df_comparacao["DIAS P/ ENTREGA_ERP"] = df_comparacao["DIAS P/ ENTREGA_ERP"].fillna(0)
+            df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"] = df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"].fillna(0)
+
+            self.log("Calculando diferenças de prazos...")
+            self.progresso["value"] = 70
+            self.root.update_idletasks()
+
+            df_comparacao["DIFERENCA_PRAZO"] = df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"] - df_comparacao["DIAS P/ ENTREGA_ERP"]
+
+            divergencias = df_comparacao[df_comparacao["DIFERENCA_PRAZO"] != 0]
+
+            self.log("Preparando para salvar as divergências...")
+            self.progresso["value"] = 80
+            self.root.update_idletasks()
+
+            pasta_destino = os.path.join(os.getcwd(), "COMPARACAO_PRAZOS")
+            if not os.path.exists(pasta_destino):
+                os.makedirs(pasta_destino)
+
+            caminho_arquivo = os.path.join(pasta_destino, "Comparacao_Prazos.xlsx")
+            self.log("Salvando divergências...")
+            self.progresso["value"] = 90
+            self.root.update_idletasks()
+
+            divergencias.to_excel(caminho_arquivo, index=False)
+
+            self.progresso["value"] = 100
+            self.root.update_idletasks()
+
+            self.log("\nProdutos com divergência:")
+            for index, row in divergencias.iterrows():
+                self.log(f"{row[coluna_chave_erp]}")
+
+            total_itens = len(df_comparacao)
+            total_divergencias = len(divergencias)
+            self.log(f"\nTotal de EAN verificados: {total_itens}")
+            self.log(f"Total de EAN com divergência: {total_divergencias}")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro durante a comparação: {e}", parent=self.root)
+            self.progresso["value"] = 0
+            self.root.update_idletasks()
+
+    def abrir_mapeamento_colunas(self):
+        self.comparar_prazos(self.entrada_erp.get(), self.entrada_marketplace.get())
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TelaComparacaoPrazos(root)
+    root.mainloop()

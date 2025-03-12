@@ -1,0 +1,69 @@
+import pandas as pd
+
+# Caminhos dos arquivos
+planilha_origem = 'C:/Users/user/Documents/Produtos_Python/Planilha_Preenchida.xlsx'
+planilha_destino = "Planilha_vazia.xlsx"
+
+# Ler os dados da planilha de origem
+df = pd.read_excel(planilha_origem)
+
+# Criar um dicionário {EAN: Nome do Produto}
+produto_dict = {str(row["EAN"]).strip(): row["Descrição"] for _, row in df.iterrows()}
+
+# Criar listas para armazenar os dados
+produto_lista = []
+kit_lista = []
+volume_lista = []
+preco_lista = []
+
+for _, row in df.iterrows():
+    ean = str(row["EAN"]).strip()  # Garantir que o EAN é uma string sem espaços
+    tipo_produto = row["Tipo de produto"]
+    descricao = row["Descrição"]
+    quantidade = row["Quantidade de produto"]
+    cor = row["Cor"]
+    altura = row["Altura"]
+    largura = row["Largura"]
+    volumes = row["Volumes"]
+    componentes = row["Componentes"]  # Pode ter valores separados por "/"
+    marca = row["Marca"]
+    custo = row["Custo"]
+    preco_venda = row["Preço de venda"]
+    preco_promo = row["Preço promoção"]
+
+    # Corrigir o Tipo de Produto
+    tipo_produto_valor = 0 if tipo_produto.strip().upper() == "PRODUTO ACABADO" else 2
+
+    # Adicionar ao Produto
+    produto_lista.append([ean, tipo_produto_valor, descricao, quantidade, cor, altura, largura, volumes, marca])
+
+    # Adicionar ao Kit se for um kit
+    if tipo_produto.strip().upper() == "KIT" and pd.notna(componentes):
+        componentes_lista = str(componentes).split("/")  # Dividir componentes
+        for comp in componentes_lista:
+            comp_ean = comp.strip()
+            nome_componente = produto_dict.get(comp_ean, "Desconhecido")  # Buscar nome do componente
+            kit_lista.append([ean, descricao, comp_ean, nome_componente])  # Adicionar nome do kit e do componente
+
+    # Adicionar ao Volume se houver mais de um volume
+    if pd.notna(volumes):
+        for i in range(int(volumes)):  # Criar linha para cada volume
+            volume_lista.append([ean, descricao, i + 1, altura, largura])
+
+    # Adicionar ao Preço
+    preco_lista.append([ean, descricao, custo, preco_venda, preco_promo])
+
+# Criar DataFrames para salvar na planilha vazia
+df_produto = pd.DataFrame(produto_lista, columns=["EAN", "Tipo de produto", "Descrição", "Quantidade", "Cor", "Altura", "Largura", "Volumes", "Marca"])
+df_kit = pd.DataFrame(kit_lista, columns=["Kit EAN", "Kit Nome", "Componente EAN", "Nome do Componente"])
+df_volume = pd.DataFrame(volume_lista, columns=["EAN", "Nome", "Volume Nº", "Altura", "Largura"])
+df_preco = pd.DataFrame(preco_lista, columns=["EAN", "Nome", "Custo", "Preço de venda", "Preço promoção"])
+
+# Escrever na planilha de destino
+with pd.ExcelWriter(planilha_destino, engine="openpyxl") as writer:
+    df_produto.to_excel(writer, sheet_name="Produto", index=False)
+    df_kit.to_excel(writer, sheet_name="Kit", index=False)
+    df_volume.to_excel(writer, sheet_name="Volume", index=False)
+    df_preco.to_excel(writer, sheet_name="Preço", index=False)
+
+print("Planilha preenchida com sucesso!")
