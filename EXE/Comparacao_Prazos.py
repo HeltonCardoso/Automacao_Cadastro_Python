@@ -32,7 +32,7 @@ class TelaComparacaoPrazos:
         self.entrada_erp.grid(row=0, column=1, padx=5, pady=5)
         btn_buscar_erp = tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_erp), bg="#008CBA", fg="white", font=("Arial", 12, "bold"), bd=0, relief=tk.FLAT)
         btn_buscar_erp.grid(row=0, column=2, padx=5, pady=5)
-        btn_buscar_erp.bind("<Enter>", lambda e: btn_buscar_erp.config(bg="#45a049"))
+        btn_buscar_erp.bind("<Enter>", lambda e: btn_buscar_erp.config(bg="#0a2040"))
         btn_buscar_erp.bind("<Leave>", lambda e: btn_buscar_erp.config(bg="#008CBA"))
 
         # Planilha Marketplace
@@ -41,7 +41,7 @@ class TelaComparacaoPrazos:
         self.entrada_marketplace.grid(row=1, column=1, padx=5, pady=5)
         btn_buscar_marketplace = tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_marketplace), bg="#008CBA", fg="white", font=("Arial", 12, "bold"), bd=0, relief=tk.FLAT)
         btn_buscar_marketplace.grid(row=1, column=2, padx=5, pady=5)
-        btn_buscar_marketplace.bind("<Enter>", lambda e: btn_buscar_marketplace.config(bg="#45a049"))
+        btn_buscar_marketplace.bind("<Enter>", lambda e: btn_buscar_marketplace.config(bg="#0a2040"))
         btn_buscar_marketplace.bind("<Leave>", lambda e: btn_buscar_marketplace.config(bg="#008CBA"))
 
         # Label do Marketplace
@@ -60,7 +60,7 @@ class TelaComparacaoPrazos:
             relief=tk.FLAT
         )
         btn_comparar.pack(pady=10)
-        btn_comparar.bind("<Enter>", lambda e: btn_comparar.config(bg="#45a049"))
+        btn_comparar.bind("<Enter>", lambda e: btn_comparar.config(bg="#0a2040"))
         btn_comparar.bind("<Leave>", lambda e: btn_comparar.config(bg="#008CBA"))
 
         # Barra de Progresso
@@ -94,7 +94,7 @@ class TelaComparacaoPrazos:
             relief=tk.FLAT
         )
         btn_limpar.pack(pady=5)
-        btn_limpar.bind("<Enter>", lambda e: btn_limpar.config(bg="#45a049"))
+        btn_limpar.bind("<Enter>", lambda e: btn_limpar.config(bg="#0a2040"))
         btn_limpar.bind("<Leave>", lambda e: btn_limpar.config(bg="#008CBA"))
 
         # Botão Fechar

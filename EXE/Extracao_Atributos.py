@@ -11,7 +11,7 @@ class TelaExtracaoAtributos:
     def __init__(self, root):
         self.root = root
         self.root.title("EXTRAÇÃO ATRIBUTOS - V1.0")
-        self.centralizar_janela(800, 450)
+        self.centralizar_janela(800, 480)
 
 
         # Adicionar ícone à janela
@@ -42,7 +42,7 @@ class TelaExtracaoAtributos:
         self.progresso.pack(pady=5)
 
         # Label de status
-        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="blue")
+        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="gray")
         self.status_label.pack(pady=5)
 
         # Área de logs
@@ -57,7 +57,7 @@ class TelaExtracaoAtributos:
         frame_rodape.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
         # Relógio no rodapé
-        self.relogio = tk.Label(frame_rodape, font=("Arial", 10), fg="blue")
+        self.relogio = tk.Label(frame_rodape, font=("Arial", 10), fg="gray")
         self.relogio.pack(side=tk.RIGHT, padx=10)
         self.atualizar_relogio()
 

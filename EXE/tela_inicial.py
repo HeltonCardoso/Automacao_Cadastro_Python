@@ -51,17 +51,17 @@ class TelaPrincipal:
         # Botões
         btn_extrair = tk.Button(frame_principal, text="EXTRAIR ATRIBUTOS", command=self.abrir_extracao_atributos, width=25, bg="#008CBA", fg="white", font=("Arial", 10, "bold"), bd=0, relief=tk.FLAT)
         btn_extrair.pack(pady=10, ipadx=10, ipady=5)
-        btn_extrair.bind("<Enter>", lambda e: btn_extrair.config(bg="#45a049"))  # Efeito hover
+        btn_extrair.bind("<Enter>", lambda e: btn_extrair.config(bg="#0a2040"))  # Efeito hover
         btn_extrair.bind("<Leave>", lambda e: btn_extrair.config(bg="#008CBA"))
 
         btn_cadastrar = tk.Button(frame_principal, text="PREENCHER PLANILHA ATHUS", command=self.abrir_cadastro_produto, width=25, bg="#008CBA", fg="white", font=("Arial", 10, "bold"), bd=0, relief=tk.FLAT)
         btn_cadastrar.pack(pady=10, ipadx=10, ipady=5)
-        btn_cadastrar.bind("<Enter>", lambda e: btn_cadastrar.config(bg="#45a049"))  # Efeito hover
+        btn_cadastrar.bind("<Enter>", lambda e: btn_cadastrar.config(bg="#0a2040"))  # Efeito hover
         btn_cadastrar.bind("<Leave>", lambda e: btn_cadastrar.config(bg="#008CBA"))
 
         btn_comparar = tk.Button(frame_principal, text="VERIFICAR PRAZOS", command=self.abrir_comparacao_prazos, width=25, bg="#008CBA", fg="white", font=("Arial", 10, "bold"), bd=0, relief=tk.FLAT)
         btn_comparar.pack(pady=10, ipadx=10, ipady=5)
-        btn_comparar.bind("<Enter>", lambda e: btn_comparar.config(bg="#45a049"))  # Efeito hover
+        btn_comparar.bind("<Enter>", lambda e: btn_comparar.config(bg="#0a2040"))  # Efeito hover
         btn_comparar.bind("<Leave>", lambda e: btn_comparar.config(bg="#008CBA"))
 
         btn_fechar = tk.Button(frame_principal, text="FECHAR", command=root.quit, width=25, bg="#f44336", fg="white", font=("Arial", 10, "bold"), bd=0, relief=tk.FLAT)
