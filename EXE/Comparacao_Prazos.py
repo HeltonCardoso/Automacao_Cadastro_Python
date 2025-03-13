@@ -14,6 +14,7 @@ class TelaComparacaoPrazos:
     def __init__(self, root):
         self.root = root
         self.root.title("VERIFICAÇÃO DE PRAZOS V1.0")
+        self.root.resizable(False, False)
         self.centralizar_janela(800, 650)
 
         # Adicionar ícone à janela
@@ -27,25 +28,25 @@ class TelaComparacaoPrazos:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Planilha OnClick
-        tk.Label(frame, text="PLANILHA ONCLICK:", fg="gray", font=("Arial", 11)).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.entrada_erp = tk.Entry(frame, width=70, font=("Arial", 10))
-        self.entrada_erp.grid(row=0, column=1, padx=5, pady=5)
-        btn_buscar_erp = tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_erp), bg="#008CBA", fg="white", font=("Arial", 12, "bold"), bd=0, relief=tk.FLAT)
+        tk.Label(frame, text="PLANILHA ONCLICK:", fg="gray", font=("Arial", 10)).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.entrada_erp = tk.Entry(frame, width=65, font=("Arial", 10))
+        self.entrada_erp.grid(row=0, column=1, padx=3, pady=3)
+        btn_buscar_erp = tk.Button(frame, text="SELECIONAR", command=lambda: self.selecionar_arquivo(self.entrada_erp), bg="#008CBA", fg="white", font=("Arial", 10, "bold"), bd=4, relief=tk.FLAT)
         btn_buscar_erp.grid(row=0, column=2, padx=5, pady=5)
         btn_buscar_erp.bind("<Enter>", lambda e: btn_buscar_erp.config(bg="#0a2040"))
         btn_buscar_erp.bind("<Leave>", lambda e: btn_buscar_erp.config(bg="#008CBA"))
 
         # Planilha Marketplace
-        tk.Label(frame, text="PLANILHA MARKETPLACE:", fg="gray", font=("Arial", 11)).grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.entrada_marketplace = tk.Entry(frame, width=70, font=("Arial", 10))
-        self.entrada_marketplace.grid(row=1, column=1, padx=5, pady=5)
-        btn_buscar_marketplace = tk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_marketplace), bg="#008CBA", fg="white", font=("Arial", 12, "bold"), bd=0, relief=tk.FLAT)
+        tk.Label(frame, text="PLANILHA MARKETPLACE:", fg="gray", font=("Arial", 10)).grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.entrada_marketplace = tk.Entry(frame, width=65, font=("Arial", 10))
+        self.entrada_marketplace.grid(row=1, column=1, padx=3, pady=3)
+        btn_buscar_marketplace = tk.Button(frame, text="SELECIONAR", command=lambda: self.selecionar_arquivo(self.entrada_marketplace), bg="#008CBA", fg="white", font=("Arial", 10, "bold"), bd=4, relief=tk.FLAT)
         btn_buscar_marketplace.grid(row=1, column=2, padx=5, pady=5)
         btn_buscar_marketplace.bind("<Enter>", lambda e: btn_buscar_marketplace.config(bg="#0a2040"))
         btn_buscar_marketplace.bind("<Leave>", lambda e: btn_buscar_marketplace.config(bg="#008CBA"))
 
         # Label do Marketplace
-        self.label_marketplace = tk.Label(self.root, text="Marketplace: Não identificado", fg="gray", font=("Arial", 11))
+        self.label_marketplace = tk.Label(self.root, text="Marketplace: Não identificado", fg="gray", font=("Arial", 10))
         self.label_marketplace.pack(pady=5)
 
         # Botão Comparar Prazos
@@ -55,8 +56,8 @@ class TelaComparacaoPrazos:
             command=self.abrir_mapeamento_colunas, 
             bg="#008CBA", 
             fg="white", 
-            font=("Arial", 12, "bold"), 
-            bd=0, 
+            font=("Arial", 10, "bold"),
+            bd=4, 
             relief=tk.FLAT
         )
         btn_comparar.pack(pady=10)
@@ -89,8 +90,8 @@ class TelaComparacaoPrazos:
             command=self.limpar_log, 
             bg="#008CBA", 
             fg="white", 
-            font=("Arial", 12, "bold"), 
-            bd=0, 
+            font=("Arial", 10, "bold"),
+            bd=4, 
             relief=tk.FLAT
         )
         btn_limpar.pack(pady=5)
@@ -104,8 +105,8 @@ class TelaComparacaoPrazos:
             command=self.root.destroy, 
             bg="#f44336", 
             fg="white", 
-            font=("Arial", 12, "bold"), 
-            bd=0, 
+            font=("Arial", 10, "bold"),
+            bd=4, 
             relief=tk.FLAT
         )
         btn_fechar.pack(pady=10)

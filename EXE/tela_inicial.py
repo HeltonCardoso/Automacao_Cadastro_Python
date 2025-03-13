@@ -5,11 +5,13 @@ from Extracao_Atributos import TelaExtracaoAtributos
 from Cadastro_Produto import TelaCadastroProduto
 from Comparacao_Prazos import TelaComparacaoPrazos
 from datetime import datetime
+import os
 
 class TelaPrincipal:
     def __init__(self, root):
         self.root = root
         self.root.title("CADASTRO DE PRODUTOS - V1.0")
+        self.root.resizable(False, False)
         self.centralizar_janela(500, 350)  # Ajuste a altura para acomodar o relógio
 
         try:
@@ -127,20 +129,27 @@ class TelaPrincipal:
         tela_comparacao.focus_force()
 
     def mostrar_sobre(self):
-        messagebox.showinfo("Sobre", "Sistema para automatizar o processo de Preenchimento da Planilha Athus e Extração dos principais atributos dos produtos.")
+        messagebox.showinfo("Sobre", "** AUTOMATIZAÇÃO PREENCHIMENTO PLANILHA ATHUS \n \n"
+        " ** EXTRAÇÃO DE ATRIBUTOS PLANILHA ONLINE \n \n"
+        " ** COMPARAÇÃO DE PRAZOS ONCLICK E MARKETPLACES.")
 
     def mostrar_documentacao(self):
         # Cria uma nova janela para exibir a documentação
         janela_documentacao = tk.Toplevel(self.root)
-        janela_documentacao.title("Documentação do Sistema")
+        janela_documentacao.title("DOCUMENTAÇÃO")
         janela_documentacao.geometry("800x600")
+
+    
 
         # Adiciona um widget ScrolledText para exibir o conteúdo
         texto_documentacao = scrolledtext.ScrolledText(janela_documentacao, wrap=tk.WORD, width=100, height=30)
         texto_documentacao.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Insere o conteúdo da documentação
-        with open("documentacao.txt", "r", encoding="utf-8") as arquivo:
+        # Caminho relativo para a pasta DOCUMENTAÇÃO no diretório acima
+        caminho_documentacao = os.path.join(os.path.dirname(os.path.dirname(__file__)), "DOCUMENTACAO", "documentacao.txt")
+
+        # Abrir o arquivo de documentação
+        with open(caminho_documentacao, "r", encoding="utf-8") as arquivo:
             conteudo = arquivo.read()
             texto_documentacao.insert(tk.INSERT, conteudo)
 

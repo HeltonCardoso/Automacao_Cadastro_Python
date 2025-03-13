@@ -1,0 +1,159 @@
+==================================================
+            DOCUMENTAÇÃO DO PROJETO
+==================================================
+
+1. tela Inicial
+--------------------------------------------------
+Descrição:
+    Este arquivo contém a classe TelaPrincipal, que é a interface gráfica principal do sistema. 
+    Ele serve como ponto de entrada para as funcionalidades do sistema, permitindo ao usuário 
+    acessar diferentes módulos, como extração de atributos, cadastro de produtos e comparação 
+    de prazos.
+
+Funcionalidades:
+    - Exibe uma janela principal com botões para acessar diferentes funcionalidades.
+    - Centraliza a janela na tela e aplica um ícone personalizado.
+    - Inclui um menu superior com opções para sair do sistema e acessar a documentação.
+    - Exibe um relógio no rodapé da janela.
+    - Abre janelas secundárias para as funcionalidades de extração de atributos, cadastro de 
+      produtos e comparação de prazos.
+
+Dependências:
+    - tkinter: Para a interface gráfica.
+    - Extracao_Atributos.py, Cadastro_Produto.py, Comparacao_Prazos.py: Para as funcionalidades 
+      específicas.
+
+Exemplo de Uso:
+    - Execute o arquivo para abrir a tela principal. Clique nos botões para acessar as 
+      funcionalidades desejadas.
+
+--------------------------------------------------
+
+2. Preencher Planilha Athus
+--------------------------------------------------
+Descrição:
+    Este arquivo contém a classe TelaCadastroProduto, que permite ao usuário importar dados de 
+    uma planilha online e preencher uma planilha modelo Athus com esses dados.
+
+Funcionalidades:
+    - Permite ao usuário selecionar uma planilha online e um modelo Athus.
+    - Processa os dados da planilha online e preenche a planilha Athus com as informações 
+      relevantes.
+    - Mantém a formatação e as validações de dados da planilha Athus.
+    - Exibe uma barra de progresso e logs durante o processamento.
+    - Salva a planilha preenchida em uma pasta específica.
+
+Dependências:
+    - pandas: Para manipulação de dados.
+    - openpyxl: Para manipulação de arquivos Excel.
+    - tkinter: Para a interface gráfica.
+
+Exemplo de Uso:
+    - Execute o arquivo para abrir a tela de cadastro de produtos. Selecione as planilhas e 
+      clique em "IMPORTAR PLANILHA ONLINE" para processar os dados.
+
+--------------------------------------------------
+
+3. Verificar Prazos
+--------------------------------------------------
+Descrição:
+    Este arquivo contém a classe TelaComparacaoPrazos, que permite ao usuário comparar prazos 
+    de entrega entre uma planilha ERP e uma planilha de marketplace.
+
+Funcionalidades:
+    - Permite ao usuário selecionar uma planilha ERP e uma planilha de marketplace.
+    - Identifica automaticamente o marketplace com base nas colunas da planilha.
+    - Compara os prazos de entrega e exibe divergências.
+    - Gera um relatório detalhado em PDF com as divergências encontradas.
+    - Exibe logs e uma barra de progresso durante o processamento.
+
+Dependências:
+    - pandas: Para manipulação de dados.
+    - matplotlib: Para geração de gráficos no relatório PDF.
+    - tkinter: Para a interface gráfica.
+
+Exemplo de Uso:
+    - Execute o arquivo para abrir a tela de comparação de prazos. Selecione as planilhas e 
+      clique em "COMPARAR PRAZOS" para iniciar a comparação.
+
+--------------------------------------------------
+
+4. Extrair Atributos
+--------------------------------------------------
+Descrição:
+    Este arquivo contém a classe TelaExtracaoAtributos, que permite ao usuário extrair 
+    atributos de produtos a partir de uma descrição HTML contida em uma planilha.
+
+Funcionalidades:
+    - Permite ao usuário selecionar uma planilha contendo descrições HTML de produtos.
+    - Extrai atributos como largura, altura, peso, material, etc., das descrições HTML.
+    - Salva os atributos extraídos em uma nova planilha.
+    - Exibe uma barra de progresso e logs durante o processamento.
+
+Dependências:
+    - pandas: Para manipulação de dados.
+    - BeautifulSoup: Para análise de HTML.
+    - tkinter: Para a interface gráfica.
+
+Exemplo de Uso:
+    - Execute o arquivo para abrir a tela de extração de atributos. Selecione a planilha e 
+      clique em "Extrair Atributos" para iniciar o processo.
+
+--------------------------------------------------
+
+INTERAÇÃO ENTRE OS MÓDULOS
+--------------------------------------------------
+- tela_inicial.py é o ponto de entrada do sistema, permitindo ao usuário acessar as 
+  funcionalidades de Cadastro_Produto.py, Comparacao_Prazos.py e Extracao_Atributos.py.
+- Cada módulo funciona de forma independente, mas todos compartilham a mesma estrutura de 
+  interface gráfica e utilizam bibliotecas comuns como tkinter e pandas.
+- Os módulos de cadastro de produtos e comparação de prazos geram arquivos de saída que são 
+  salvos em pastas específicas (PLANILHA_PREENCHIDA e COMPARACAO_PRAZOS, respectivamente).
+
+--------------------------------------------------
+
+DEPENDÊNCIAS DO PROJETO
+--------------------------------------------------
+Bibliotecas Python:
+    - tkinter: Para a interface gráfica.
+    - pandas: Para manipulação de dados.
+    - openpyxl: Para manipulação de arquivos Excel.
+    - BeautifulSoup: Para análise de HTML.
+    - matplotlib: Para geração de gráficos.
+    - csv: Para leitura de arquivos CSV.
+    - re: Para expressões regulares.
+    - datetime: Para manipulação de datas e horários.
+
+--------------------------------------------------
+
+ESTRUTURA DE PASTAS
+--------------------------------------------------
+- PLANILHA_PREENCHIDA: Armazena as planilhas preenchidas pelo módulo de cadastro de produtos.
+- COMPARACAO_PRAZOS: Armazena os resultados da comparação de prazos.
+- ATRIBUTOS: Armazena os atributos extraídos pelo módulo de extração de atributos.
+- RELATORIO_DETALHADO: Armazena os relatórios detalhados gerados pelo módulo de comparação 
+  de prazos.
+
+--------------------------------------------------
+
+INSTRUÇÕES DE USO
+--------------------------------------------------
+1. Execute o arquivo tela_inicial.py para abrir a interface principal.
+2. Utilize os botões para acessar as funcionalidades desejadas:
+    - EXTRAIR ATRIBUTOS: Para extrair atributos de produtos a partir de descrições HTML.
+    - PREENCHER PLANILHA ATHUS: Para preencher uma planilha modelo Athus com dados de uma 
+      planilha online.
+    - VERIFICAR PRAZOS: Para comparar prazos de entrega entre uma planilha ERP e uma planilha 
+      de marketplace.
+3. Siga as instruções em cada tela para selecionar arquivos e processar os dados.
+
+--------------------------------------------------
+
+OBSERVAÇÕES
+--------------------------------------------------
+- Certifique-se de que todas as dependências estão instaladas antes de executar os scripts.
+- Os arquivos de saída são salvos em pastas específicas dentro do diretório do projeto.
+- Para qualquer dúvida ou problema, consulte a documentação ou entre em contato com o 
+  desenvolvedor.
+
+==================================================
