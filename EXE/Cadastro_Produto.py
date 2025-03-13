@@ -26,7 +26,9 @@ class TelaCadastroProduto:
     def __init__(self, root):
         self.root = root
         self.root.title("CADASTRO PLANILHA ATHUS V1.0")
-        self.centralizar_janela(750, 510)
+        self.root.resizable(False, False)
+        self.centralizar_janela(750, 520)
+        self.aplicar_estilo_global()  # Aplica o estilo global
 
         # Adicionar ícone à janela
         try:
@@ -34,87 +36,165 @@ class TelaCadastroProduto:
         except:
             pass  # Ignora se o ícone não for encontrado
 
-        # Configuração de estilo
-        self.style = ttk.Style()
-        self.style.configure("TButton", padding=6, font=("Helvetica", 10))
-        self.style.configure("TLabel", font=("Helvetica", 10))
-        self.style.configure("TEntry", font=("Helvetica", 10))
-
-        # Interface
+        # Frame principal
         frame = tk.Frame(self.root)
         frame.pack(pady=20)
 
-        tk.Label(frame, text="SELECIONE PLANILHA ONLINE:").grid(row=0, column=0)
-        self.entrada_origem = ttk.Entry(frame, width=70)
+        # Label e Entry para selecionar a planilha online
+        tk.Label(frame, text="PLANILHA ONLINE:").grid(row=0, column=0)
+        self.entrada_origem = tk.Entry(frame, width=70, font=("Arial", 10))
         self.entrada_origem.grid(row=0, column=1)
-        ttk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_origem)).grid(row=0, column=2)
+        btn_buscar_origem = tk.Button(
+            frame, 
+            text="SELECIONE", 
+            command=lambda: self.selecionar_arquivo(self.entrada_origem), 
+            bg="#008CBA", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_buscar_origem.grid(row=0, column=2)
+        btn_buscar_origem.bind("<Enter>", lambda e: btn_buscar_origem.config(bg="#0a2040"))  # Efeito hover
+        btn_buscar_origem.bind("<Leave>", lambda e: btn_buscar_origem.config(bg="#008CBA"))  # Efeito ao sair
 
-        tk.Label(frame, text="SELECIONE MODELO ATHUS:").grid(row=1, column=0)
-        self.entrada_destino = ttk.Entry(frame, width=70)
+        # Label e Entry para selecionar o modelo Athus
+        tk.Label(frame, text="PLANILHA ATHUS:").grid(row=1, column=0)
+        self.entrada_destino = tk.Entry(frame, width=70, font=("Arial", 10))
         self.entrada_destino.grid(row=1, column=1)
-        ttk.Button(frame, text="Buscar", command=lambda: self.selecionar_arquivo(self.entrada_destino)).grid(row=1, column=2)
+        
+        btn_buscar_destino = tk.Button(
+            frame, 
+            text="SELECIONE", 
+            command=lambda: self.selecionar_arquivo(self.entrada_destino), 
+            bg="#008CBA", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_buscar_destino.grid(row=1, column=2, pady=(10, 10))
+        btn_buscar_destino.bind("<Enter>", lambda e: btn_buscar_destino.config(bg="#0a2040"))  # Efeito hover
+        btn_buscar_destino.bind("<Leave>", lambda e: btn_buscar_destino.config(bg="#008CBA"))  # Efeito ao sair
 
-        ttk.Button(self.root, text="IMPORTAR PLANILHA ONLINE", command=self.processar).pack(pady=10)
+        # Botão "IMPORTAR PLANILHA ONLINE"
+        btn_importar = tk.Button(
+            self.root, 
+            text="IMPORTAR PLANILHA ONLINE", 
+            command=self.processar, 
+            bg="#008CBA", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_importar.pack(pady=10)
+        btn_importar.bind("<Enter>", lambda e: btn_importar.config(bg="#0a2040"))  # Efeito hover
+        btn_importar.bind("<Leave>", lambda e: btn_importar.config(bg="#008CBA"))  # Efeito ao sair
 
         # Barra de progresso
-        self.progresso = Progressbar(self.root, orient="horizontal", length=500, mode="determinate")
+        self.progresso = Progressbar(self.root, orient="horizontal", length=550, mode="determinate")
         self.progresso.pack(pady=5)
 
         # Label de status
-        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="blue")
+        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="gray", font=("Arial", 10))
         self.status_label.pack(pady=5)
 
         # Área de logs
-        self.log_area = scrolledtext.ScrolledText(self.root, width=70, height=10, state="disabled")
+        self.log_area = scrolledtext.ScrolledText(
+            self.root, 
+            width=80, 
+            height=10, 
+            bg="white", 
+            state="disabled", 
+            font=("Courier", 10)
+        )
         self.log_area.pack(pady=10)
 
-        ttk.Button(self.root, text="FECHAR", command=self.root.destroy).pack(pady=10)
+        # Configuração de tags para cores
+        self.log_area.tag_config("info", foreground="blue", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("erro", foreground="red", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("sucesso", foreground="green", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("aviso", foreground="orange", font=("Courier", 11, "bold"))
 
-    # Rodapé
+        # Botão "FECHAR"
+        btn_fechar = tk.Button(
+            self.root, 
+            text="FECHAR", 
+            command=self.root.destroy, 
+            bg="#f44336", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_fechar.pack(pady=10)
+        btn_fechar.bind("<Enter>", lambda e: btn_fechar.config(bg="#e53935"))  # Efeito hover
+        btn_fechar.bind("<Leave>", lambda e: btn_fechar.config(bg="#f44336"))  # Efeito ao sair
+
+        # Rodapé
         frame_rodape = tk.Frame(root)
         frame_rodape.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
+        # Texto de versão
+        texto_versao = tk.Label(frame_rodape, text="Versão 1.0 - Desenvolvido por Helton", fg="gray", font=("Arial", 8))
+        texto_versao.pack(side=tk.LEFT, padx=10)
+
         # Relógio no rodapé
-        self.relogio = tk.Label(frame_rodape, font=("Arial", 10), fg="blue")
+        self.relogio = tk.Label(frame_rodape, font=("Arial", 8), fg="gray")
         self.relogio.pack(side=tk.RIGHT, padx=10)
         self.atualizar_relogio()
-    
-    def atualizar_relogio(self):
-        agora = datetime.now()
-        data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
-        self.relogio.config(text=data_hora)
-        self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
+
+    def aplicar_estilo_global(self):
+        """Aplica o estilo global da interface."""
+        style = ttk.Style(self.root)
+        style.configure("TButton", font=("Arial", 10, "bold"), padding=10, relief="flat", background="#008CBA", foreground="white")
+        style.map("TButton", background=[("active", "#0a2040")], foreground=[("active", "white")])
+        style.configure("Fechar.TButton", background="#f44336", foreground="white")
+        style.map("Fechar.TButton", background=[("active", "#e53935")], foreground=[("active", "white")])
+        style.configure("TLabel", font=("Arial", 10), foreground="gray")
+        style.configure("TEntry", font=("Arial", 10), relief="flat")
 
     def centralizar_janela(self, largura, altura):
+        """Centraliza a janela na tela."""
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
         pos_x = (largura_tela // 2) - (largura // 2)
         pos_y = (altura_tela // 2) - (altura // 2)
         self.root.geometry(f"{largura}x{altura}+{pos_x}+{pos_y}")
 
-    def selecionar_arquivo(self, entrada):
+    def atualizar_relogio(self):
+        """Atualiza o relógio no rodapé."""
+        agora = datetime.now()
+        data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
+        self.relogio.config(text=data_hora)
+        self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
 
-        # Desativa o atributo -topmost temporariamente
+    def selecionar_arquivo(self, entrada):
+        """Abre o diálogo para selecionar um arquivo."""
         self.root.attributes('-topmost', False)
-        
-        # Abre o filedialog
-        caminho = filedialog.askopenfilename(parent=self.root, filetypes=(("Arquivos Excel", "*.xlsx"), ("Todos os arquivos", "*.*")))
-        
-        # Reativa o atributo -topmost após o fechamento do diálogo
+        caminho = filedialog.askopenfilename(
+            parent=self.root,
+            filetypes=(("Arquivos Excel", "*.xlsx *.xls *.csv"),("Todos os arquivos", "*.*"))
+        )
         self.root.attributes('-topmost', True)
-        
+
         if caminho:
             entrada.delete(0, tk.END)
             entrada.insert(0, caminho)
 
-    def log(self, mensagem):
-        """Adiciona uma mensagem à área de logs."""
+    def log(self, mensagem, tipo="info"):
+        """Adiciona uma mensagem à área de logs com timestamp."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        mensagem_formatada = f"[{timestamp}] {mensagem}\n"
+
         self.log_area.config(state="normal")
-        self.log_area.insert(tk.END, mensagem + "\n")
+        self.log_area.insert(tk.END, mensagem_formatada, tipo)
         self.log_area.config(state="disabled")
         self.log_area.yview(tk.END)  # Rola para a última linha
 
     def processar(self):
+        """Processa as planilhas selecionadas."""
         planilha_origem = self.entrada_origem.get()
         planilha_destino = self.entrada_destino.get()
 
@@ -129,6 +209,7 @@ class TelaCadastroProduto:
             messagebox.showerror("Erro", f"Ocorreu um erro durante o processamento: {e}", parent=self.root)
 
     def executar_processamento(self, planilha_origem, planilha_destino):
+        """Executa o processamento das planilhas."""
         try:
             # Ler os dados da planilha de origem
             df = pd.read_excel(planilha_origem)

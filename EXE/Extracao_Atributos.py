@@ -11,8 +11,9 @@ class TelaExtracaoAtributos:
     def __init__(self, root):
         self.root = root
         self.root.title("EXTRAÇÃO ATRIBUTOS - V1.0")
-        self.centralizar_janela(800, 480)
-
+        self.root.resizable(False, False)
+        self.centralizar_janela(800, 510)
+        self.aplicar_estilo_global()  # Aplica o estilo global
 
         # Adicionar ícone à janela
         try:
@@ -20,74 +21,129 @@ class TelaExtracaoAtributos:
         except:
             pass  # Ignora se o ícone não for encontrado
 
-        # Configuração de estilo
-        self.style = ttk.Style()
-        self.style.configure("TButton", padding=6, font=("Helvetica", 10))
-        self.style.configure("TLabel", font=("Helvetica", 10))
-        self.style.configure("TEntry", font=("Helvetica", 10))
-        
-        # Interface
+        # Frame principal
         frame = tk.Frame(self.root)
         frame.pack(pady=20)
 
+        # Label e Entry para selecionar a planilha
         ttk.Label(frame, text="Selecione a Planilha:").grid(row=0, column=0)
-        self.entrada_arquivo = tk.Entry(frame, width=80)
+        self.entrada_arquivo = tk.Entry(frame, width=60, font=("Arial", 10))
         self.entrada_arquivo.grid(row=0, column=1)
-        ttk.Button(frame, text="Buscar", command=self.selecionar_arquivo).grid(row=0, column=2)
+        btn_buscar = tk.Button(
+            frame, 
+            text="SELECIONAR", 
+            command=self.selecionar_arquivo, 
+            bg="#008CBA", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_buscar.grid(row=0, column=2)
+        btn_buscar.bind("<Enter>", lambda e: btn_buscar.config(bg="#0a2040"))  # Efeito hover
+        btn_buscar.bind("<Leave>", lambda e: btn_buscar.config(bg="#008CBA"))  # Efeito ao sair
 
-        ttk.Button(self.root, text="Extrair Atributos", command=self.extrair_dados).pack(pady=10)
+        # Botão "Extrair Atributos"
+        btn_extrair = tk.Button(
+            self.root, 
+            text="EXTRAIR ATRIBUTOS", 
+            command=self.extrair_dados, 
+            bg="#008CBA", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_extrair.pack(pady=10)
+        btn_extrair.bind("<Enter>", lambda e: btn_extrair.config(bg="#0a2040"))  # Efeito hover
+        btn_extrair.bind("<Leave>", lambda e: btn_extrair.config(bg="#008CBA"))  # Efeito ao sair
 
         # Barra de progresso
-        self.progresso = Progressbar(self.root, orient="horizontal", length=720, mode="determinate")
+        self.progresso = Progressbar(self.root, orient="horizontal", length=735, mode="determinate")
         self.progresso.pack(pady=5)
 
         # Label de status
-        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="gray")
+        self.status_label = tk.Label(self.root, text="Pronto para iniciar...", fg="gray", font=("Arial", 10))
         self.status_label.pack(pady=5)
 
         # Área de logs
-        self.log_area = scrolledtext.ScrolledText(self.root, width=90, height=10, state="disabled")
+        self.log_area = scrolledtext.ScrolledText(
+            self.root, 
+            width=103, 
+            height=15, 
+            bg="white", 
+            state="disabled", 
+            font=("Courier", 8)
+        )
         self.log_area.pack(pady=10)
 
-        ttk.Button(self.root, text="FECHAR", command=self.root.destroy).pack(pady=10)
+        # Configuração de tags para cores
+        self.log_area.tag_config("info", foreground="gray", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("erro", foreground="red", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("sucesso", foreground="green", font=("Courier", 11, "bold"))
+        self.log_area.tag_config("aviso", foreground="orange", font=("Courier", 11, "bold"))
 
+        # Botão "Fechar"
+        btn_fechar = tk.Button(
+            self.root, 
+            text="FECHAR", 
+            command=self.root.destroy, 
+            bg="#f44336", 
+            fg="white", 
+            font=("Arial", 10, "bold"), 
+            bd=4, 
+            relief=tk.FLAT
+        )
+        btn_fechar.pack(pady=10)
+        btn_fechar.bind("<Enter>", lambda e: btn_fechar.config(bg="#e53935"))  # Efeito hover
+        btn_fechar.bind("<Leave>", lambda e: btn_fechar.config(bg="#f44336"))  # Efeito ao sair
 
         # Rodapé
         frame_rodape = tk.Frame(root)
         frame_rodape.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
+        # Texto de versão
+        texto_versao = tk.Label(frame_rodape, text="Versão 1.0 - Desenvolvido por Helton", fg="gray", font=("Arial", 8))
+        texto_versao.pack(side=tk.LEFT, padx=10)
+
         # Relógio no rodapé
-        self.relogio = tk.Label(frame_rodape, font=("Arial", 10), fg="gray")
+        self.relogio = tk.Label(frame_rodape, font=("Arial", 8), fg="gray")
         self.relogio.pack(side=tk.RIGHT, padx=10)
         self.atualizar_relogio()
 
-       
-    def atualizar_relogio(self):
-        agora = datetime.now()
-        data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
-        self.relogio.config(text=data_hora)
-        self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
-
+    def aplicar_estilo_global(self):
+        """Aplica o estilo global da interface."""
+        style = ttk.Style(self.root)
+        style.configure("TButton", font=("Arial", 10, "bold"), padding=10, relief="flat", background="#008CBA", foreground="white")
+        style.map("TButton", background=[("active", "#0a2040")], foreground=[("active", "white")])
+        style.configure("Fechar.TButton", background="#f44336", foreground="white")
+        style.map("Fechar.TButton", background=[("active", "#e53935")], foreground=[("active", "white")])
+        style.configure("TLabel", font=("Arial", 10), foreground="gray")
+        style.configure("TEntry", font=("Arial", 10), relief="flat")
 
     def centralizar_janela(self, largura, altura):
+        """Centraliza a janela na tela."""
         largura_tela = self.root.winfo_screenwidth()
         altura_tela = self.root.winfo_screenheight()
         pos_x = (largura_tela // 2) - (largura // 2)
         pos_y = (altura_tela // 2) - (altura // 2)
         self.root.geometry(f"{largura}x{altura}+{pos_x}+{pos_y}")
 
+    def atualizar_relogio(self):
+        """Atualiza o relógio no rodapé."""
+        agora = datetime.now()
+        data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
+        self.relogio.config(text=data_hora)
+        self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
+
     def selecionar_arquivo(self):
+        """Abre o diálogo para selecionar um arquivo."""
         self.root.grab_release()
-        # Abre o filedialog, associando-o à tela secundária
         caminho = filedialog.askopenfilename(
-            parent=self.root,  # Associa o filedialog à tela secundária
+            parent=self.root,
             filetypes=[("Planilhas Excel", "*.xlsx")]
         )
-
-        # Reativa o grab_set após fechar o filedialog
         self.root.grab_set()
-
-        # Garante que a tela secundária fique no topo
         self.root.lift()
         self.root.attributes('-topmost', True)
         self.root.focus_force()
@@ -96,17 +152,18 @@ class TelaExtracaoAtributos:
             self.entrada_arquivo.delete(0, tk.END)
             self.entrada_arquivo.insert(0, caminho)
 
-    def log(self, mensagem):
+    def log(self, mensagem, tipo="info"):
         """Adiciona uma mensagem à área de logs com timestamp."""
         timestamp = datetime.now().strftime("%H:%M:%S")
         mensagem_formatada = f"[{timestamp}] {mensagem}\n"
 
         self.log_area.config(state="normal")
-        self.log_area.insert(tk.END, mensagem_formatada)
+        self.log_area.insert(tk.END, mensagem_formatada, tipo)
         self.log_area.config(state="disabled")
         self.log_area.yview(tk.END)  # Rola para a última linha
 
     def extrair_atributos(self, descricao_html):
+        """Extrai atributos de uma descrição HTML."""
         atributos = {
             "Largura": "", "Altura": "", "Profundidade": "", "Peso": "", "Cor": "", "Modelo": "", "Fabricante": "",
             "Volumes": "", "Material da Estrutura": "", "Material": "", "Peso Suportado": "", "Acabamento": "", "Possui Portas": "",
@@ -214,6 +271,7 @@ class TelaExtracaoAtributos:
         return atributos
 
     def extrair_dados(self):
+        """Extrai os dados da planilha selecionada."""
         caminho = self.entrada_arquivo.get()
         if not caminho:
             messagebox.showerror("Erro", "Selecione um arquivo primeiro!", parent=self.root)
