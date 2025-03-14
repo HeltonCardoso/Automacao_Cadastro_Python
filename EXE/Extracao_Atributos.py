@@ -177,6 +177,25 @@ class TelaExtracaoAtributos:
         else:
             texto_limpo = ""
 
+            # Regex para "Peso"
+        regex_peso = re.compile(r"Peso[:\s]*(\d+[,\.]?\d*)\s*kg", re.IGNORECASE)
+        match_peso = regex_peso.search(texto_limpo)
+        if match_peso:
+            # Extrai o número e formata como "X kg"
+            peso = match_peso.group(1).replace(',', '.')
+            atributos["Peso"] = f"{peso} kg"
+
+        # Regex para "Peso Suportado" (flexível para variações de texto)
+        regex_peso_suportado = re.compile(
+            r"Peso\s*suportado\s*(?:distribuído)?[:\s]*(\d+[,\.]?\d*)\s*kg", 
+            re.IGNORECASE
+        )
+        match_peso_suportado = regex_peso_suportado.search(texto_limpo)
+        if match_peso_suportado:
+            # Extrai o número e formata como "X kg"
+            peso_suportado = match_peso_suportado.group(1).replace(',', '.')
+            atributos["Peso Suportado"] = f"{peso_suportado} kg"
+
         # Compila as expressões regulares uma única vez
         regex_padroes = {
             "Largura": re.compile(r"Largura[:\s]*([\d,\.]+)\s*cm?", re.IGNORECASE),
@@ -237,13 +256,13 @@ class TelaExtracaoAtributos:
             atributos["Profundidade"] = f"{max(profundidades):.1f} cm"
 
         # Captura "Peso Suportado" em diferentes formatos
-        regex_peso_suportado = re.compile(r"(?:Peso Suportado(?: Distribuído)?[:\s]*)?(\d+[,\.]?\d*)\s*kg", re.IGNORECASE)
+       # regex_peso_suportado = re.compile(r"(?:Peso Suportado(?: Distribuído)?[:\s]*)?(\d+[,\.]?\d*)\s*kg", re.IGNORECASE)
 
-        pesos_encontrados = regex_peso_suportado.findall(texto_limpo)
+      #  pesos_encontrados = regex_peso_suportado.findall(texto_limpo)
 
-        if pesos_encontrados:
-            maior_peso = max([float(p.replace(",", ".")) for p in pesos_encontrados])
-            atributos["Peso Suportado"] = f"{maior_peso:.1f} kg"
+        #if pesos_encontrados:
+          #  maior_peso = max([float(p.replace(",", ".")) for p in pesos_encontrados])
+          #  atributos["Peso Suportado"] = f"{maior_peso:.1f} kg"
 
         # Busca a seção "Características do Produto"
         regex_caracteristicas = re.compile(r"(Características do Produto[:\-]?\s*)([\s\S]+?)(?:\n\n|\Z)", re.IGNORECASE)
