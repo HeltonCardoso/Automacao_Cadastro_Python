@@ -20,12 +20,6 @@ class TelaPrincipal:
         except Exception as e:
             print(f"Erro ao carregar o ícone .ico: {e}")
 
-        try:
-            # Para sistemas Unix-like (Linux, macOS)
-            icon = tk.PhotoImage(file="icone.png")  # Substitua pelo caminho do seu ícone .png
-            self.root.tk.call('wm', 'iconphoto', self.root._w, icon)
-        except Exception as e:
-            print(f"Erro ao carregar o ícone .png: {e}")
 
         # Menu superior
         menu_superior = tk.Menu(root)
