@@ -482,7 +482,7 @@ class TelaComparacaoPrazos:
             self.log(f"Total de EAN/SKUS com divergência: {total_divergencias}", "info")
 
             # Gerar relatório detalhado
-            # self.gerar_relatorio_detalhado(df_comparacao, divergencias, marketplace, coluna_chave_erp)
+            self.gerar_relatorio_detalhado(df_comparacao, divergencias, marketplace, coluna_chave_erp)
 
         except Exception as e:
             self.log(f"[ERRO] Ocorreu um erro durante a comparação: {e}", "erro")
