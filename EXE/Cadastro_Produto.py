@@ -172,12 +172,12 @@ class TelaCadastroProduto:
 
     def selecionar_arquivo(self, entrada):
         """Abre o diálogo para selecionar um arquivo."""
-        self.root.attributes('-topmost', False)
+        self.root.attributes('-topmost', False)  # Desativa o topmost temporariamente
         caminho = filedialog.askopenfilename(
-            parent=self.root,
-            filetypes=(("Arquivos Excel", "*.xlsx *.xls *.csv"),("Todos os arquivos", "*.*"))
+            parent=self.root,  # Define a janela pai como a janela de cadastro
+            filetypes=(("Arquivos Excel", "*.xlsx *.xls *.csv"), ("Todos os arquivos", "*.*"))
         )
-        self.root.attributes('-topmost', True)
+        self.root.attributes('-topmost', True)  # Reativa o topmost
 
         if caminho:
             entrada.delete(0, tk.END)
@@ -371,14 +371,16 @@ class TelaCadastroProduto:
                 marca_unica = next(iter(marcas_cadastradas))  # Obtém a única marca do conjunto
                 novo_nome_arquivo = f"Template_Produtos_Mpozenato_CADASTRO_{marca_unica}.xlsx"
 
-                # Caminho relativo para a pasta PLANILHA_PREENCHIDA na raiz do projeto
-                pasta_destino = os.path.join(os.getcwd(), "PLANILHA_PREENCHIDA")
+                # Abrir caixa de diálogo para selecionar o local de salvamento
+                caminho_arquivo = filedialog.asksaveasfilename(
+                    defaultextension=".xlsx",
+                    filetypes=[("Arquivos Excel", "*.xlsx")],
+                    initialfile=novo_nome_arquivo
+                )
 
-                # Verificar se o diretório existe, caso contrário, criar
-                if not os.path.exists(pasta_destino):
-                    os.makedirs(pasta_destino)
-
-                caminho_arquivo = os.path.join(pasta_destino, novo_nome_arquivo)  # Combina o diretório e o nome do arquivo
+                if not caminho_arquivo:
+                    self.log("Operação de salvamento cancelada pelo usuário.", "aviso")
+                    return
 
                 try:
                     wb.save(caminho_arquivo)
@@ -398,7 +400,7 @@ class TelaCadastroProduto:
             return caminho_arquivo  # Retorna o caminho completo do arquivo salvo
 
         except Exception as e:
-            self.log(f"Erro durante o processamento: {e}", parent=self.root)
+            self.log(f"Erro durante o processamento: {e}", "erro")
             raise e
 
 # Função principal

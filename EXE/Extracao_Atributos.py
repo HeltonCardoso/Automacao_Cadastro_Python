@@ -162,13 +162,83 @@ class TelaExtracaoAtributos:
         self.log_area.config(state="disabled")
         self.log_area.yview(tk.END)  # Rola para a última linha
 
+    def extrair_pesos(self, texto_limpo):
+        """
+        Extrai 'Peso' e 'Peso Suportado' de um texto, incluindo casos com:
+        - Peso simples: "Peso: 10 kg"
+        - Peso Suportado Distribuído: "30 kg / 20 kg / 15 kg"
+        - Formatos variados: "30Kg", "15 kg distribuídos"
+        """
+        def formatar_peso(valor):
+            """Formata o valor para exibir como inteiro ou decimal"""
+            if valor.is_integer():
+                return f"{int(valor)} kg"
+            else:
+                return f"{valor:.1f} kg".replace(".", ",")
+
+        pesos = {
+            "Peso": "",
+            "Peso Suportado": ""
+        }
+
+        # --- 1. Extrai PESO normal ---
+        padrao_peso = re.compile(r"Peso[:\s]*([\d,\.]+)\s*kg", re.IGNORECASE)
+        match_peso = padrao_peso.search(texto_limpo)
+        if match_peso:
+            valor = float(match_peso.group(1).replace(",", "."))
+            pesos["Peso"] = formatar_peso(valor)
+
+        # --- 2. Extrai PESO SUPORTADO (incluindo múltiplos valores) ---
+        # Padrão para capturar todo o bloco após "Peso Suportado Distribuído:"
+        padrao_bloco = re.compile(
+            r"Peso\s*Suportado\s*Distribuído[:\s]*([^/\n]+(?:\/[^/\n]+)*)", 
+            re.IGNORECASE
+        )
+        
+        # Padrão para extrair valores individuais (ex: "30 kg", "15Kg distribuídos")
+        padrao_valores = re.compile(r"([\d,\.]+)\s*kg", re.IGNORECASE)
+
+        # Encontra todos os blocos de "Peso Suportado Distribuído"
+        blocos = padrao_bloco.finditer(texto_limpo)
+        valores_encontrados = []
+
+        for bloco in blocos:
+            # Extrai valores individuais de cada bloco (separados por "/")
+            partes = bloco.group(1).split("/")
+            for parte in partes:
+                match_valor = padrao_valores.search(parte)
+                if match_valor:
+                    valor = float(match_valor.group(1).replace(",", "."))
+                    valores_encontrados.append(valor)
+
+        # Se encontrou valores, pega o maior
+        if valores_encontrados:
+            maior_valor = max(valores_encontrados)
+            pesos["Peso Suportado"] = formatar_peso(maior_valor)
+        else:
+            # Fallback: procura por "Peso Suportado" simples (não distribuído)
+            padrao_simples = re.compile(
+                r"(?:Peso\s*Suportado|Suporta|Carga\s*Máxima)[:\s]*([\d,\.]+)\s*kg", 
+                re.IGNORECASE
+            )
+            match_simples = padrao_simples.search(texto_limpo)
+            if match_simples:
+                valor = float(match_simples.group(1).replace(",", "."))
+                pesos["Peso Suportado"] = formatar_peso(valor)
+
+        return pesos
+
     def extrair_atributos(self, descricao_html):
         """Extrai atributos de uma descrição HTML."""
         atributos = {
-            "Largura": "", "Altura": "", "Profundidade": "", "Peso": "", "Cor": "", "Modelo": "", "Fabricante": "",
-            "Volumes": "", "Material da Estrutura": "", "Material": "", "Peso Suportado": "", "Acabamento": "", "Possui Portas": "",
-            "Quantidade de Portas": "", "Tipo de Porta": "", "Possui Prateleiras": "", "Quantidade de Prateleiras": "",
-            "Conteúdo da Embalagem": "", "Quantidade de Gavetas": "", "Possui Gavetas": "", "Revestimento": "", "Quantidade de lugares": "","Possui Nicho": ""
+            "Largura": "", "Altura": "", "Profundidade": "", "Peso": "", "Cor": "", 
+            "Modelo": "", "Fabricante": "", "Volumes": "", "Material da Estrutura": "", 
+            "Material": "", "Peso Suportado": "", "Acabamento": "", "Possui Portas": "",
+            "Quantidade de Portas": "", "Tipo de Porta": "", "Possui Prateleiras": "", 
+            "Quantidade de Prateleiras": "", "Conteúdo da Embalagem": "", 
+            "Quantidade de Gavetas": "", "Possui Gavetas": "", "Revestimento": "", 
+            "Quantidade de lugares": "", "Possui Nicho": "", "Quantidade de Assentos": "",
+            "Tipo de Assento": "", "Sugestão de Lugares": "", "Tipo de Encosto": ""
         }
 
         if pd.notna(descricao_html):
@@ -177,115 +247,93 @@ class TelaExtracaoAtributos:
         else:
             texto_limpo = ""
 
-            # Regex para "Peso"
-        regex_peso = re.compile(r"Peso[:\s]*(\d+[,\.]?\d*)\s*kg", re.IGNORECASE)
-        match_peso = regex_peso.search(texto_limpo)
-        if match_peso:
-            # Extrai o número e formata como "X kg"
-            peso = match_peso.group(1).replace(',', '.')
-            atributos["Peso"] = f"{peso} kg"
+        # Função auxiliar para formatar medidas
+        def formatar_medida(valor):
+            if valor.is_integer():
+                return f"{int(valor)} cm"
+            else:
+                return f"{valor:.1f} cm".replace(".", ",")
 
-        # Regex para "Peso Suportado" (flexível para variações de texto)
-        regex_peso_suportado = re.compile(
-            r"Peso\s*suportado\s*(?:distribuído)?[:\s]*(\d+[,\.]?\d*)\s*kg", 
+        # Regex para medidas no formato "L x A x P" (definido ANTES do uso)
+        regex_medidas = re.compile(
+            r"\b(\d+[,\.]?\d*)\s*(?:cm\s*)?x\s*(\d+[,\.]?\d*)\s*(?:cm\s*)?x\s*(\d+[,\.]?\d*)\s*cm\b",
             re.IGNORECASE
         )
-        match_peso_suportado = regex_peso_suportado.search(texto_limpo)
-        if match_peso_suportado:
-            # Extrai o número e formata como "X kg"
-            peso_suportado = match_peso_suportado.group(1).replace(',', '.')
-            atributos["Peso Suportado"] = f"{peso_suportado} kg"
 
-        # Compila as expressões regulares uma única vez
+        # --- 1. Extrai medidas explícitas ---
+        for medida in ["Largura", "Altura", "Profundidade"]:
+            padrao = rf"{medida}[:\s]*([\d,\.]+)\s*cm"
+            match = re.search(padrao, texto_limpo, re.IGNORECASE)
+            if match:
+                valor = float(match.group(1).replace(",", "."))
+                atributos[medida] = formatar_medida(valor)
+
+        # --- 2. Fallback: medidas no formato "L x A x P" ---
+        if not any(atributos.get(medida) for medida in ["Largura", "Altura", "Profundidade"]):
+            matches_medidas = regex_medidas.findall(texto_limpo)
+            if matches_medidas:
+                # Pega os maiores valores de cada dimensão
+                larguras = [float(m[0].replace(",", ".")) for m in matches_medidas]
+                alturas = [float(m[1].replace(",", ".")) for m in matches_medidas]
+                profundidades = [float(m[2].replace(",", ".")) for m in matches_medidas]
+                
+                atributos["Largura"] = formatar_medida(max(larguras))
+                atributos["Altura"] = formatar_medida(max(alturas))
+                atributos["Profundidade"] = formatar_medida(max(profundidades))
+
+        # --- 3. Extrai PESOS (usando o método separado) ---
+        pesos = self.extrair_pesos(texto_limpo)
+        atributos.update(pesos)
+
+        # --- 4. Extrai OUTROS ATRIBUTOS (Material, Cor, Volumes, etc.) ---
         regex_padroes = {
-            "Largura": re.compile(r"Largura[:\s]*([\d,\.]+)\s*cm?", re.IGNORECASE),
-            "Altura": re.compile(r"Altura[:\s]*([\d,\.]+)\s*cm?", re.IGNORECASE),
-            "Profundidade": re.compile(r"Profundidade[:\s]*([\d,\.]+)\s*cm?", re.IGNORECASE),
-            "Peso": re.compile(r"Peso[:\s]*([\d,\.]+)\s*kg?", re.IGNORECASE),
-            "Volumes": re.compile(r"Volumes[:\s]*(\d+)", re.IGNORECASE),
-            "Material da Estrutura": re.compile(r"Material da Estrutura[:\s]*([\w\s]+)", re.IGNORECASE),
-            "Possui Portas": re.compile(r"Possui Portas[:\s]*(Sim|Não)", re.IGNORECASE),
-            "Quantidade de Portas": re.compile(r"Quantidade de Portas[:\s]*(\d+)", re.IGNORECASE),
-            "Tipo de Porta": re.compile(r"Tipo de Porta[:\s]*([\w\s]+)", re.IGNORECASE),
-            "Possui Prateleiras": re.compile(r"Possui Prateleiras[:\s]*(Sim|Não)", re.IGNORECASE),
-            "Quantidade de Prateleiras": re.compile(r"Quantidade de Prateleiras[:\s]*(\d+)", re.IGNORECASE),
-            "Conteúdo da Embalagem": re.compile(r"Conteúdo da Embalagem[:\s]*([\w\s,]+)", re.IGNORECASE),
-            "Quantidade de Gavetas": re.compile(r"Quantidade de Gavetas[:\s]*(\d+)", re.IGNORECASE),
-            "Possui Gavetas": re.compile(r"Possui Gavetas[:\s]*(Sim|Não)", re.IGNORECASE),
-            "Revestimento": re.compile(r"Revestimento[:\s]*([\w\s,]+)", re.IGNORECASE),
-            "Quantidade de lugares": re.compile(r"Quantidade de lugares[:\s]*(\d+)", re.IGNORECASE),
-            "Possui Nicho": re.compile(r"Possui Nicho[:\s]*(Sim|Não)", re.IGNORECASE),
+            "Cor": r"Cor[:\s]*([\w\s]+)",
+            "Modelo": r"Modelo[:\s]*([\w\s]+)",
+            "Fabricante": r"Fabricante[:\s]*([\w\s]+)",
+            "Volumes": r"Volumes[:\s]*(\d+)",
+            "Material da Estrutura": r"Material da Estrutura[:\s]*([\w\s]+)",
+            "Possui Portas": r"Possui Portas[:\s]*(Sim|Não)",
+            "Quantidade de Portas": r"Quantidade de Portas[:\s]*(\d+)",
+            "Tipo de Porta": r"Tipo de Porta[:\s]*([\w\s]+)",
+            "Possui Prateleiras": r"Possui Prateleiras[:\s]*(Sim|Não)",
+            "Quantidade de Prateleiras": r"Quantidade de Prateleiras[:\s]*(\d+)",
+            "Conteúdo da Embalagem": r"Conteúdo da Embalagem[:\s]*([\w\s,]+)",
+            "Quantidade de Gavetas": r"Quantidade de Gavetas[:\s]*(\d+)",
+            "Possui Gavetas": r"Possui Gavetas[:\s]*(Sim|Não)",
+            "Quantidade de lugares": r"Quantidade de lugares[:\s]*(\d+)",
+            "Sugestão de Lugares": r"Sugestão de Lugares[:\s]*(\d+)",
+            "Quantidade de Assentos": r"Quantidade de Assentos[:\s]*(\d+)",
+            "Tipo de Assento": r"Tipo de Assento[:\s]*([\w\s,]+)",
+            "Possui Nicho": r"Possui Nicho[:\s]*(Sim|Não)",
+            "Tipo de Encosto": r"Tipo de Encosto[:\s]*([\w\s,]+)"
         }
 
-        # Captura medidas no formato (L x A x P)
-        regex_medidas = re.compile(r"\b(\d+[,\.]?\d*)\s*(?:cm)?\s*x\s*(\d+[,\.]?\d*)\s*(?:cm)?\s*x\s*(\d+[,\.]?\d*)\s*(?:cm)?\b", re.IGNORECASE)
-
-        # Busca padrões normais
-        for chave, padrao in regex_padroes.items():
-            match = padrao.search(texto_limpo)
+        for atributo, padrao in regex_padroes.items():
+            match = re.search(padrao, texto_limpo, re.IGNORECASE)
             if match:
-                valor = match.group(1).strip(" .")
-                if chave in ["Largura", "Altura", "Profundidade"]:
-                    atributos[chave] = valor + " cm"
-                elif chave in ["Peso"]:
-                    atributos[chave] = valor + " kg"
-                else:
-                    atributos[chave] = valor
+                atributos[atributo] = match.group(1).strip()
 
-        # Captura medidas gerais (L x A x P)
-        matches_medidas = regex_medidas.findall(texto_limpo)
+        # --- 5. Extrai ATRIBUTOS ESPECÍFICOS (Material, Acabamento, Revestimento) ---
+        secao_caracteristicas = re.search(
+            r"Características do Produto[:\-]?\s*([\s\S]+?)(?:\n\n|\Z)", 
+            texto_limpo, 
+            re.IGNORECASE
+        )
+        texto_caracteristicas = secao_caracteristicas.group(1) if secao_caracteristicas else texto_limpo
 
-        larguras = []
-        alturas = []
-        profundidades = []
-
-        for match in matches_medidas:
-            largura = float(match[0].replace(",", "."))
-            altura = float(match[1].replace(",", "."))
-            profundidade = float(match[2].replace(",", "."))
-
-            larguras.append(largura)
-            alturas.append(altura)
-            profundidades.append(profundidade)
-
-        if larguras:
-            atributos["Largura"] = f"{max(larguras):.1f} cm"
-        if alturas:
-            atributos["Altura"] = f"{max(alturas):.1f} cm"
-        if profundidades:
-            atributos["Profundidade"] = f"{max(profundidades):.1f} cm"
-
-        # Captura "Peso Suportado" em diferentes formatos
-       # regex_peso_suportado = re.compile(r"(?:Peso Suportado(?: Distribuído)?[:\s]*)?(\d+[,\.]?\d*)\s*kg", re.IGNORECASE)
-
-      #  pesos_encontrados = regex_peso_suportado.findall(texto_limpo)
-
-        #if pesos_encontrados:
-          #  maior_peso = max([float(p.replace(",", ".")) for p in pesos_encontrados])
-          #  atributos["Peso Suportado"] = f"{maior_peso:.1f} kg"
-
-        # Busca a seção "Características do Produto"
-        regex_caracteristicas = re.compile(r"(Características do Produto[:\-]?\s*)([\s\S]+?)(?:\n\n|\Z)", re.IGNORECASE)
-        match_caracteristicas = regex_caracteristicas.search(texto_limpo)
-
-        if match_caracteristicas:
-            texto_caracteristicas = match_caracteristicas.group(2)
-        else:
-            texto_caracteristicas = texto_limpo  # Se não encontrar, usa todo o texto
-
-        # Captura "Material" apenas na seção "Características do Produto"
-        regex_material = re.compile(r"Material[:\s]*([\w\s]+)", re.IGNORECASE)
-        match_material = regex_material.search(texto_caracteristicas)
-
+        # Material (prioridade na seção de características)
+        match_material = re.search(r"Material[:\s]*([\w\s]+)", texto_caracteristicas, re.IGNORECASE)
         if match_material:
             atributos["Material"] = match_material.group(1).strip()
 
-        # Captura "Acabamento" dentro das características
-        regex_acabamento = re.compile(r"Acabamento[:\-]?\s*([\w\s\-,]+)", re.IGNORECASE)
-        match_acabamento = regex_acabamento.search(texto_caracteristicas)
-
-        if match_acabamento:
-            atributos["Acabamento"] = match_acabamento.group(1).strip()
+        # Acabamento e Revestimento
+        for atributo, padrao in {
+            "Acabamento": r"Acabamento[:\-]?\s*([\w\s\-,]+)",
+            "Revestimento": r"Revestimento[:\s]*([\w\s,]+)"
+        }.items():
+            match = re.search(padrao, texto_caracteristicas, re.IGNORECASE)
+            if match:
+                atributos[atributo] = match.group(1).strip()
 
         return atributos
 
@@ -321,7 +369,8 @@ class TelaExtracaoAtributos:
             "EAN", "Nome", "Largura", "Altura", "Profundidade", "Peso", "Cor", "Modelo", "Fabricante", "Volumes",
             "Material da Estrutura", "Material", "Peso Suportado", "Acabamento", "Possui Portas", "Quantidade de Portas",
             "Tipo de Porta", "Possui Prateleiras", "Quantidade de Prateleiras", "Conteúdo da Embalagem",
-            "Quantidade de Gavetas", "Possui Gavetas", "Revestimento", "Quantidade de lugares", "Possui Nicho"
+            "Quantidade de Gavetas", "Possui Gavetas", "Revestimento", "Quantidade de lugares","Possui Nicho",
+            "Quantidade de Assentos","Tipo de Assento","Sugestão de Lugares","Tipo de Encosto"
         ]
 
         total_linhas = len(df)
