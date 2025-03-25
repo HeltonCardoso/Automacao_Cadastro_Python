@@ -10,6 +10,12 @@ import os
 class TelaPrincipal:
     def __init__(self, root):
         self.root = root
+
+        self.janelas_abertas ={
+            'cadastro'  : None,
+            'extracao'  : None,
+            'comparacao': None
+            }
         self.root.title("CADASTRO MPOZENATO - V1.1")
         self.root.resizable(False, False)
         self.centralizar_janela(500, 350)  # Ajuste a altura para acomodar o relógio
@@ -99,28 +105,55 @@ class TelaPrincipal:
         self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
 
     def abrir_extracao_atributos(self):
-        tela_extracao = tk.Toplevel(self.root)
-        TelaExtracaoAtributos(tela_extracao)
-        tela_extracao.iconbitmap("icone.ico")  # Define o ícone para a janela filha
-        tela_extracao.lift()
-        tela_extracao.attributes('-topmost', True)
-        tela_extracao.focus_force()
-
-    def abrir_cadastro_produto(self):
-        tela_cadastro = tk.Toplevel(self.root)
-        TelaCadastroProduto(tela_cadastro)
-        tela_cadastro.iconbitmap("icone.ico")  # Define o ícone para a janela filha
-        tela_cadastro.lift()
-        tela_cadastro.attributes('-topmost', True)
-        tela_cadastro.focus_force()
+        if self.janelas_abertas['extracao'] is None or not self.janelas_abertas['extracao'].winfo_exists():
+            tela_extracao = tk.Toplevel(self.root)
+            self.janelas_abertas['extracao'] = tela_extracao
+            TelaExtracaoAtributos(tela_extracao)
+            
+            # Configura o fechamento para limpar a referência
+            tela_extracao.protocol("WM_DELETE_WINDOW", lambda: self.fechar_janela('extracao'))
+            
+            tela_extracao.iconbitmap("IMG/icone.ico")
+            tela_extracao.transient(self.root)
+            tela_extracao.grab_set()
+        else:
+            self.janelas_abertas['extracao'].lift()
 
     def abrir_comparacao_prazos(self):
-        tela_comparacao = tk.Toplevel(self.root)
-        TelaComparacaoPrazos(tela_comparacao)
-        tela_comparacao.iconbitmap("icone.ico")  # Define o ícone para a janela filha
-        tela_comparacao.lift()
-        tela_comparacao.attributes('-topmost', True)
-        tela_comparacao.focus_force()
+        if self.janelas_abertas['comparacao'] is None or not self.janelas_abertas['comparacao'].winfo_exists():
+            tela_comparacao = tk.Toplevel(self.root)
+            self.janelas_abertas['comparacao'] = tela_comparacao
+            TelaComparacaoPrazos(tela_comparacao)
+            
+            # Configura o fechamento para limpar a referência
+            tela_comparacao.protocol("WM_DELETE_WINDOW", lambda: self.fechar_janela('comparacao'))
+            
+            tela_comparacao.iconbitmap("IMG/icone.ico")
+            tela_comparacao.transient(self.root)
+            tela_comparacao.grab_set()
+        else:
+            self.janelas_abertas['comparacao'].lift()
+
+    def abrir_cadastro_produto(self):
+        if self.janelas_abertas['cadastro'] is None or not self.janelas_abertas['cadastro'].winfo_exists():
+            tela_cadastro = tk.Toplevel(self.root)
+            self.janelas_abertas['cadastro'] = tela_cadastro
+            TelaCadastroProduto(tela_cadastro)
+            
+            # Configura o fechamento para limpar a referência
+            tela_cadastro.protocol("WM_DELETE_WINDOW", lambda: self.fechar_janela('cadastro'))
+            
+            tela_cadastro.iconbitmap("IMG/icone.ico")
+            tela_cadastro.transient(self.root)
+            tela_cadastro.grab_set()
+        else:
+            self.janelas_abertas['cadastro'].lift()
+
+    def fechar_janela(self, tipo):
+        """Fecha a janela e limpa a referência"""
+        if self.janelas_abertas[tipo] is not None:
+            self.janelas_abertas[tipo].destroy()
+        self.janelas_abertas[tipo] = None
 
     def mostrar_sobre(self):
         messagebox.showinfo("Sobre", "** AUTOMATIZAÇÃO PREENCHIMENTO PLANILHA ATHUS \n \n"

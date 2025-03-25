@@ -338,85 +338,102 @@ class TelaExtracaoAtributos:
         return atributos
 
     def extrair_dados(self):
-        """Extrai os dados da planilha selecionada."""
-        caminho = self.entrada_arquivo.get()
-        if not caminho:
-            messagebox.showerror("Erro", "Selecione um arquivo primeiro!", parent=self.root)
-            return
+                """Extrai os dados da planilha selecionada."""
+                caminho = self.entrada_arquivo.get()
+                if not caminho:
+                    messagebox.showerror("Erro", "Selecione um arquivo primeiro!", parent=self.root)
+                    return
 
-        if not os.path.exists(caminho):
-            messagebox.showerror("Erro", "O arquivo selecionado não existe!", parent=self.root)
-            return
+                if not os.path.exists(caminho):
+                    messagebox.showerror("Erro", "O arquivo selecionado não existe!", parent=self.root)
+                    return
 
-        try:
-            df = pd.read_excel(caminho)
-        except PermissionError:
-            messagebox.showerror("Erro", "Feche o arquivo e tente novamente!", parent=self.root)
-            return
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao ler o arquivo: {str(e)}", parent=self.root)
-            return
+                try:
+                    df = pd.read_excel(caminho)
+                except PermissionError:
+                    messagebox.showerror("Erro", "Feche o arquivo e tente novamente!", parent=self.root)
+                    return
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Erro ao ler o arquivo: {str(e)}", parent=self.root)
+                    return
 
-        # Verifica se as colunas necessárias estão presentes
-        colunas_necessarias = ["EAN", "NOMEE-COMMERCE", "DESCRICAOHTML", "MODMPZ", "COR"]
-        for coluna in colunas_necessarias:
-            if coluna not in df.columns:
-                messagebox.showerror("Erro", f"A coluna '{coluna}' não foi encontrada no arquivo!", parent=self.root)
-                return
+                # Verifica se as colunas necessárias estão presentes
+                colunas_necessarias = ["EAN", "NOMEE-COMMERCE", "DESCRICAOHTML", "MODMPZ", "COR"]
+                for coluna in colunas_necessarias:
+                    if coluna not in df.columns:
+                        messagebox.showerror("Erro", f"A coluna '{coluna}' não foi encontrada no arquivo!", parent=self.root)
+                        return
 
-        dados_extraidos = []
-        colunas = [
-            "EAN", "Nome", "Largura", "Altura", "Profundidade", "Peso", "Cor", "Modelo", "Fabricante", "Volumes",
-            "Material da Estrutura", "Material", "Peso Suportado", "Acabamento", "Possui Portas", "Quantidade de Portas",
-            "Tipo de Porta", "Possui Prateleiras", "Quantidade de Prateleiras", "Conteúdo da Embalagem",
-            "Quantidade de Gavetas", "Possui Gavetas", "Revestimento", "Quantidade de lugares","Possui Nicho",
-            "Quantidade de Assentos","Tipo de Assento","Sugestão de Lugares","Tipo de Encosto"
-        ]
+                dados_extraidos = []
+                colunas = [
+                    "EAN", "Nome", "Largura", "Altura", "Profundidade", "Peso", "Cor", "Modelo", "Fabricante", "Volumes",
+                    "Material da Estrutura", "Material", "Peso Suportado", "Acabamento", "Possui Portas", "Quantidade de Portas",
+                    "Tipo de Porta", "Possui Prateleiras", "Quantidade de Prateleiras", "Conteúdo da Embalagem",
+                    "Quantidade de Gavetas", "Possui Gavetas", "Revestimento", "Quantidade de lugares","Possui Nicho",
+                    "Quantidade de Assentos","Tipo de Assento","Sugestão de Lugares","Tipo de Encosto"
+                ]
 
-        total_linhas = len(df)
-        self.progresso["maximum"] = total_linhas
-        self.progresso["value"] = 0
+                total_linhas = len(df)
+                self.progresso["maximum"] = total_linhas
+                self.progresso["value"] = 0
 
-        for idx, row in df.iterrows():
-            try:
-                ean = str(row.get("EAN", "")).strip()
-                nome = row.get("NOMEE-COMMERCE", "Desconhecido")
-                descricao_html = row.get("DESCRICAOHTML", "")
-                modelo = str(row.get("MODMPZ", "")).strip()
-                cor = str(row.get("COR", "")).strip()
-                fabricante = nome.split("-")[-1].strip() if "-" in nome else ""
+                for idx, row in df.iterrows():
+                    try:
+                        ean = str(row.get("EAN", "")).strip()
+                        nome = row.get("NOMEE-COMMERCE", "Desconhecido")
+                        descricao_html = row.get("DESCRICAOHTML", "")
+                        modelo = str(row.get("MODMPZ", "")).strip()
+                        cor = str(row.get("COR", "")).strip()
+                        fabricante = nome.split("-")[-1].strip() if "-" in nome else ""
 
-                atributos = self.extrair_atributos(descricao_html)
-                atributos["Cor"] = cor
-                atributos["Modelo"] = modelo
-                atributos["Fabricante"] = fabricante
+                        atributos = self.extrair_atributos(descricao_html)
+                        atributos["Cor"] = cor
+                        atributos["Modelo"] = modelo
+                        atributos["Fabricante"] = fabricante
 
-                dados_extraidos.append([ean, nome] + list(atributos.values()))
-                self.progresso["value"] = idx + 1
-                self.status_label.config(text=f"Processando linha {idx + 1} de {total_linhas}...")
-                self.log(f"- {nome}")
-                self.root.update_idletasks()
-            except Exception as e:
-                self.log(f"Erro ao processar linha {idx + 1}: {str(e)}")
+                        dados_extraidos.append([ean, nome] + list(atributos.values()))
+                        self.progresso["value"] = idx + 1
+                        self.status_label.config(text=f"Processando linha {idx + 1} de {total_linhas}...")
+                        self.log(f"- {nome}")
+                        self.root.update_idletasks()
+                    except Exception as e:
+                        self.log(f"Erro ao processar linha {idx + 1}: {str(e)}")
 
-        df_saida = pd.DataFrame(dados_extraidos, columns=colunas)
+                df_saida = pd.DataFrame(dados_extraidos, columns=colunas)
 
-        # Caminho relativo para a pasta ATRIBUTOS na raiz do projeto
-        pasta_destino = os.path.join(os.getcwd(), "ATRIBUTOS")
+                # Abrir diálogo para escolher local de salvamento
+                self.root.attributes('-topmost', False)
+                arquivo_saida = filedialog.asksaveasfilename(
+                    parent=self.root,
+                    defaultextension=".xlsx",
+                    filetypes=[("Arquivos Excel", "*.xlsx")],
+                    title="Salvar Atributos Extraídos",
+                    initialfile="Atributos_Extraidos.xlsx"
+                )
+                self.root.attributes('-topmost', True)
 
-        # Verificar se o diretório existe, caso contrário, criar
-        if not os.path.exists(pasta_destino):
-            os.makedirs(pasta_destino)
+                if not arquivo_saida:  # Usuário cancelou
+                    self.log("Operação cancelada pelo usuário.", "aviso")
+                    self.progresso["value"] = 0
+                    return
 
-        arquivo_saida = os.path.join(pasta_destino, "Atributos_Extraidos.xlsx")
+                # Verificar se o diretório existe, criar se necessário
+                pasta_destino = os.path.dirname(arquivo_saida)
+                if pasta_destino and not os.path.exists(pasta_destino):
+                    os.makedirs(pasta_destino)
 
-        try:
-            df_saida.to_excel(arquivo_saida, index=False)
-            self.log("Arquivo salvo com sucesso!")
-            messagebox.showinfo("Sucesso", f"Atributos extraídos com sucesso!\nSalvo em:\n{arquivo_saida}", parent=self.root)
-        except PermissionError:
-            messagebox.showerror("Erro", "Feche o arquivo de saída e tente novamente!", parent=self.root)
-            return
+                try:
+                    df_saida.to_excel(arquivo_saida, index=False)
+                    self.log("Arquivo salvo com sucesso!")
+                    messagebox.showinfo("Sucesso", 
+                                    f"Atributos extraídos com sucesso!\nSalvo em:\n{arquivo_saida}", 
+                                    parent=self.root)
+                except PermissionError:
+                    messagebox.showerror("Erro", "Feche o arquivo de saída e tente novamente!", parent=self.root)
+                    return
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Erro ao salvar o arquivo: {str(e)}", parent=self.root)
+                    return
 
 # Função principal
 if __name__ == "__main__":

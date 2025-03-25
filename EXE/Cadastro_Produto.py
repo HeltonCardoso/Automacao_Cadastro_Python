@@ -208,6 +208,27 @@ class TelaCadastroProduto:
         except Exception as e:
             messagebox.showerror("Erro", f"Ocorreu um erro durante o processamento: {e}", parent=self.root)
 
+    def mostrar_janela_salvar(self, titulo, tipos_arquivo, nome_inicial):
+        """Exibe a janela de salvamento garantindo que fique na frente"""
+        # Esconde temporariamente a janela principal
+        self.root.withdraw()
+        
+        # Abre a janela de salvamento
+        caminho = filedialog.asksaveasfilename(
+            title=titulo,
+            defaultextension=".xlsx",
+            filetypes=tipos_arquivo,
+            initialfile=nome_inicial
+        )
+        
+        # Restaura a janela principal
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
+        
+        return caminho
+    
+
     def executar_processamento(self, planilha_origem, planilha_destino):
         """Executa o processamento das planilhas."""
         try:
@@ -372,10 +393,11 @@ class TelaCadastroProduto:
                 novo_nome_arquivo = f"Template_Produtos_Mpozenato_CADASTRO_{marca_unica}.xlsx"
 
                 # Abrir caixa de diálogo para selecionar o local de salvamento
-                caminho_arquivo = filedialog.asksaveasfilename(
-                    defaultextension=".xlsx",
-                    filetypes=[("Arquivos Excel", "*.xlsx")],
-                    initialfile=novo_nome_arquivo
+                # Substitua a parte do salvamento por:
+                caminho_arquivo = self.mostrar_janela_salvar(
+                    titulo="Salvar Planilha Processada",
+                    tipos_arquivo=[("Arquivos Excel", "*.xlsx")],
+                    nome_inicial=novo_nome_arquivo
                 )
 
                 if not caminho_arquivo:

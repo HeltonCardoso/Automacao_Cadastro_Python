@@ -5,8 +5,6 @@ import pandas as pd
 import os
 import csv
 import re
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 from datetime import datetime
 from PIL import Image, ImageTk
 
@@ -15,20 +13,16 @@ class TelaComparacaoPrazos:
         self.root = root
         self.root.title("VERIFICAÇÃO DE PRAZOS V1.0")
         self.root.resizable(False, False)
-        self.centralizar_janela(800, 650)
+        self.centralizar_janela(800, 680)
     
         # Frame para marketplace identificado e imagem
         frame_marketplace = tk.Frame(self.root)
         frame_marketplace.pack(pady=5)
         
-        # Label para imagem do marketplace (MODIFICAÇÃO IMPORTANTE)
+        # Label para imagem do marketplace 
         self.imagem_marketplace = tk.Label(frame_marketplace)
         self.imagem_marketplace.pack(side=tk.LEFT, padx=5)
-        
-        # Dicionário para manter referências das imagens
         self.imagens_carregadas = {}
-
-        # Adicionar ícone à janela
         try:
             self.root.iconbitmap("IMG/icone.ico")
         except:
@@ -36,11 +30,7 @@ class TelaComparacaoPrazos:
 
         # Configurar interface principal
         self.configurar_interface()
-
-        # Agora pode carregar as imagens (log_area já existe)
         self.imagens_marketplaces = self.carregar_imagens_marketplaces()
-
-        
 
     def configurar_interface(self):
         # Frame principal
@@ -76,8 +66,7 @@ class TelaComparacaoPrazos:
         # Label para imagem do marketplace
         self.imagem_marketplace = tk.Label(frame_marketplace)
         self.imagem_marketplace.pack(side=tk.LEFT, padx=5)
-        self.imagem_referencia = None  # Variável para manter a referência
-        
+        self.imagem_referencia = None
         
         # Frame para o botão de comparar
         frame_botao = tk.Frame(self.root)
@@ -106,7 +95,7 @@ class TelaComparacaoPrazos:
         self.status_label = tk.Label(self.root, text="Tela de log", fg="gray", font=("Arial", 10))
         self.status_label.pack(pady=5)
 
-        # Área de Log (agora criada antes de tentar usá-la)
+        # Área de Log
         self.log_area = scrolledtext.ScrolledText(self.root, width=80, height=12, bg="white", state="disabled", font=("Courier", 10))
         self.log_area.pack(pady=10)
 
@@ -224,22 +213,10 @@ class TelaComparacaoPrazos:
                         img = Image.open(caminho_imagem)
                         img = img.resize((50, 50), Image.LANCZOS)
                         photo_img = ImageTk.PhotoImage(img)
-                        
-                        # Armazena a referência da imagem
                         imagens[nome] = photo_img
-                        # Mantém uma referência adicional
                         if not hasattr(self, 'imagens_salvas'):
                             self.imagens_salvas = []
                         self.imagens_salvas.append(photo_img)
-            
-                        #self.log(f"[INFO] Imagem carregada: {arquivo}", "info")
-                    #except Exception as e:
-                       # self.log(f"[ERRO] Falha ao carregar {arquivo}: {str(e)}", "erro")
-              #  else:
-                  #  self.log(f"[AVISO] Imagem não encontrada: {arquivo}", "aviso")
-                    
-       # except Exception as e:
-         #   self.log(f"[ERRO CRÍTICO] Erro ao carregar imagens: {str(e)}", "erro")
                     except:
                         pass
         except:
@@ -250,7 +227,6 @@ class TelaComparacaoPrazos:
     def atualizar_imagem_marketplace(self, marketplace):
         """Atualiza a imagem do marketplace exibida na interface"""
         if marketplace and marketplace in self.imagens_marketplaces and self.imagens_marketplaces[marketplace] is not None:
-            # Mantém a referência como atributo da classe
             self.imagem_referencia = self.imagens_marketplaces[marketplace]
             self.imagem_marketplace.config(image=self.imagem_referencia)
         else:
@@ -261,7 +237,7 @@ class TelaComparacaoPrazos:
         agora = datetime.now()
         data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
         self.relogio.config(text=data_hora)
-        self.root.after(1000, self.atualizar_relogio)  # Atualiza a cada 1 segundo
+        self.root.after(1000, self.atualizar_relogio)
 
     def centralizar_janela(self, largura, altura):
         largura_tela = self.root.winfo_screenwidth()
@@ -293,20 +269,20 @@ class TelaComparacaoPrazos:
             for marketplace, colunas_mapeadas in self.mapa_marketplaces.items():
                 if colunas_mapeadas["prazo"] in colunas:
                     self.label_marketplace.config(text=f"Marketplace: {marketplace}")
-                    self.atualizar_imagem_marketplace(marketplace)  # LINHA ADICIONADA
+                    self.atualizar_imagem_marketplace(marketplace)
                     return
 
             if "EAN" in colunas and "Prazo de Entrega" in colunas:
                 self.label_marketplace.config(text="Marketplace: MadeiraMadeira")
-                self.atualizar_imagem_marketplace("MadeiraMadeira")  # LINHA ADICIONADA
+                self.atualizar_imagem_marketplace("MadeiraMadeira")
                 return
 
             self.label_marketplace.config(text="Marketplace: Não identificado")
-            self.atualizar_imagem_marketplace(None)  # LINHA ADICIONADA
+            self.atualizar_imagem_marketplace(None)
             self.log(f"[AVISO] Não foi possível identificar o marketplace. Verifique as colunas da planilha.", "aviso")
         except Exception as e:
             self.label_marketplace.config(text="Marketplace: Erro ao identificar")
-            self.atualizar_imagem_marketplace(None)  # LINHA ADICIONADA
+            self.atualizar_imagem_marketplace(None)
             self.log(f"[ERRO] Erro ao identificar o marketplace: {e}", "erro")
 
     def ler_arquivo(self, caminho):
@@ -315,10 +291,7 @@ class TelaComparacaoPrazos:
                 raise ValueError(f"O arquivo '{caminho}' não existe.")
             
             if caminho.endswith('.csv'):
-                # Detectar o delimitador
                 delimitador = self.detectar_delimitador(caminho)
-                
-                # Ler o arquivo CSV, ignorando linhas mal formatadas
                 return pd.read_csv(caminho, delimiter=delimitador, encoding='latin1', on_bad_lines="skip")
             
             elif caminho.endswith(('.xls', '.xlsx')):
@@ -336,20 +309,12 @@ class TelaComparacaoPrazos:
             return dialect.delimiter
 
     def extrair_numeros(self, texto):
-        """
-        Extrai números de uma string usando regex.
-        Exemplo: "Disponível em 60 dias úteis" -> 60
-        """
-        if pd.isna(texto):  # Verifica se o valor é NaN
+        if pd.isna(texto):
             return 0
-        numeros = re.findall(r'\d+', str(texto))  # Encontra todos os números na string
-        return int(numeros[0]) if numeros else 0  # Retorna o primeiro número ou 0 se não houver
+        numeros = re.findall(r'\d+', str(texto))
+        return int(numeros[0]) if numeros else 0
 
     def log(self, mensagem, tipo="info"):
-        """
-        Adiciona uma mensagem à área de logs com formatação e cores.
-        Tipos: info (azul), erro (vermelho), sucesso (verde), aviso (laranja), divergencia (vermelho e negrito).
-        """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         mensagem_formatada = f"[{timestamp}] {mensagem}\n"
 
@@ -359,125 +324,10 @@ class TelaComparacaoPrazos:
         self.log_area.yview(tk.END)
         self.root.update_idletasks()
 
-    def aplicar_estilo_botoes(self):
-        # Configuração de estilo para os botões
-        self.style.configure("TButton", 
-                            font=("Arial", 10, "bold"), 
-                            padding=10, 
-                            relief=tk.FLAT, 
-                            background="#008CBA", 
-                            foreground="white")
-        self.style.map("TButton",
-                    background=[("active", "#45a049")],  # Cor ao passar o mouse
-                    foreground=[("active", "white")])
-        
-        # Estilo específico para o botão "Fechar"
-        self.style.configure("Fechar.TButton", 
-                            background="#f44336", 
-                            foreground="white")
-        self.style.map("Fechar.TButton",
-                    background=[("active", "#e53935")],  # Cor ao passar o mouse
-                    foreground=[("active", "white")])
-
     def limpar_log(self):
-        """Limpa a área de logs."""
         self.log_area.config(state="normal")
         self.log_area.delete(1.0, tk.END)
         self.log_area.config(state="disabled")
-
-    def gerar_relatorio_detalhado(self, df_comparacao, divergencias, marketplace, coluna_chave_erp):
-        try:
-            self.log("\n Gerando relatório detalhado...", "aviso")
-            
-            # Passo 1: Obter o caminho do diretório atual (onde o script está sendo executado)
-            caminho_atual = os.path.dirname(os.path.abspath(__file__))
-            
-            # Passo 2: Subir um nível no diretório
-            caminho_pai = os.path.dirname(caminho_atual)
-            
-            # Passo 3: Criar a pasta RELATORIO_DETALHADO no nível superior
-            pasta_relatorio = os.path.join(caminho_pai, "RELATORIO_DETALHADO")
-            if not os.path.exists(pasta_relatorio):
-                os.makedirs(pasta_relatorio)
-            
-            # Passo 4: Dividir as divergências em lotes menores
-            tamanho_lote = 500  # Número de produtos por PDF
-            lotes = [divergencias[i:i + tamanho_lote] for i in range(0, len(divergencias), tamanho_lote)]
-            
-            # Passo 5: Gerar um PDF para cada lote
-            for indice, lote in enumerate(lotes):
-                caminho_relatorio = os.path.join(pasta_relatorio, f"Relatorio_Detalhado_Parte_{indice + 1}.pdf")
-                
-                with PdfPages(caminho_relatorio) as pdf:
-                    # Página 1: Estatísticas Gerais
-                    plt.figure(figsize=(8.27, 11.69))  # Formato A4 em retrato (largura x altura em polegadas)
-                    plt.axis('off')
-                    plt.title(f"Relatório Detalhado de Comparação de Prazos - Parte {indice + 1}", fontsize=16, pad=20)
-                    
-                    total_itens = len(df_comparacao)
-                    total_divergencias = len(divergencias)
-                    percentual_divergencias = (total_divergencias / total_itens) * 100 if total_itens > 0 else 0
-                    
-                    estatisticas = (
-                        f"Total de produtos verificados: {total_itens}\n"
-                        f"Total de produtos com divergências: {total_divergencias}\n"
-                        f"Percentual de divergências: {percentual_divergencias:.2f}%\n"
-                        f"Produtos nesta parte: {len(lote)}\n"
-                    )
-                    
-                    plt.text(0.1, 0.8, estatisticas, fontsize=12, ha="left", va="top", wrap=True)
-                    pdf.savefig()
-                    plt.close()
-                    
-                    # Página 2: Gráfico de Barras (Divergências)
-                    plt.figure(figsize=(8.27, 11.69))  # Formato A4 em retrato
-                    plt.bar(["Com Divergências", "Sem Divergências"], [len(lote), total_itens - len(lote)], color=["red", "green"])
-                    plt.title("Distribuição de Divergências", fontsize=16)
-                    plt.ylabel("Quantidade de Produtos")
-                    pdf.savefig()
-                    plt.close()
-                    
-                    # Páginas 3 em diante: Detalhes das Divergências
-                    detalhes_por_pagina = []
-                    detalhes = ""
-                    for index, row in lote.iterrows():
-                        detalhes_produto = (
-                            f"Código: {row[coluna_chave_erp]}\n"
-                            f"Prazo ERP: {row['DIAS P/ ENTREGA_ERP']}\n"
-                            f"Prazo Marketplace: {row['DIAS P/ ENTREGA_MARKETPLACE']}\n"
-                            f"Diferença: {row['DIFERENCA_PRAZO']}\n"
-                            f"{'-' * 40}\n"
-                        )
-                        
-                        # Se o texto ultrapassar o limite da página, criar uma nova página
-                        if len(detalhes) + len(detalhes_produto) > 1000:  # Aumentei o limite para 3000 caracteres
-                            detalhes_por_pagina.append(detalhes)
-                            detalhes = detalhes_produto  # Reinicia o texto para a próxima página
-                        else:
-                            detalhes += detalhes_produto
-                    
-                    # Adicionar os detalhes restantes (última página)
-                    if detalhes:
-                        detalhes_por_pagina.append(detalhes)
-                    
-                    # Adicionar cada página de detalhes ao PDF
-                    for i, pagina in enumerate(detalhes_por_pagina):
-                        plt.figure(figsize=(8.27, 11.69))  # Formato A4 em retrato
-                        plt.axis('off')
-                        plt.title(f"Detalhes das Divergências - Página {i + 1}", fontsize=16, pad=20)
-                        plt.text(0.1, 0.8, pagina, fontsize=10, ha="left", va="top", wrap=True)
-                        pdf.savefig()
-                        plt.close()
-                
-                self.log(f"Relatório detalhado salvo em: {caminho_relatorio}", "sucesso")
-            
-            messagebox.showinfo("Relatório Gerado", f"Relatórios detalhados salvos em: {pasta_relatorio}", parent=self.root)
-        
-        except Exception as e:
-            self.log(f"Erro ao gerar relatório detalhado: {e}", "erro")
-            messagebox.showerror("Erro", f"Erro ao gerar relatório detalhado: {e}", parent=self.root)    
-    
-    
 
     def comparar_prazos(self, planilha_erp, planilha_marketplace):
         try:
@@ -499,7 +349,7 @@ class TelaComparacaoPrazos:
 
             mapeamento = self.mapa_marketplaces[marketplace]
 
-            # Verificar se as colunas necessárias existem
+            # Verificar colunas necessárias
             if mapeamento["cod_barra"] not in df_marketplace.columns or mapeamento["prazo"] not in df_marketplace.columns:
                 raise ValueError(f"Colunas do marketplace não encontradas. Verifique se as colunas '{mapeamento['cod_barra']}' e '{mapeamento['prazo']}' existem.")
 
@@ -518,17 +368,14 @@ class TelaComparacaoPrazos:
 
             # Tratar o Tray
             if marketplace == "Tray":
-                # Extrair números da coluna de prazo
                 df_marketplace["DIAS P/ ENTREGA_MARKETPLACE"] = df_marketplace["DIAS P/ ENTREGA_MARKETPLACE"].apply(self.extrair_numeros)
                 self.log(f"Valores de prazo no Tray: {df_marketplace['DIAS P/ ENTREGA_MARKETPLACE'].unique()}", "info")
 
-            # Remover .0 dos valores de COD_COMPARACAO
+            # Limpar dados
             df_marketplace["COD_COMPARACAO"] = df_marketplace["COD_COMPARACAO"].astype(str).str.replace(r"\.0$", "", regex=True)
-
-            # Remover valores 'nan'
             df_marketplace = df_marketplace[df_marketplace["COD_COMPARACAO"] != "nan"]
 
-            # Converter códigos de barras para string e remover espaços
+            # Converter códigos de barras
             coluna_chave_erp = "COD AUXILIAR" if marketplace == "Mobly" else "COD BARRA"
             df_erp[coluna_chave_erp] = df_erp[coluna_chave_erp].astype(str).str.strip()
             df_marketplace["COD_COMPARACAO"] = df_marketplace["COD_COMPARACAO"].astype(str).str.strip()
@@ -536,7 +383,7 @@ class TelaComparacaoPrazos:
             # Realizar o merge
             df_comparacao = pd.merge(df_erp, df_marketplace, left_on=coluna_chave_erp, right_on="COD_COMPARACAO", suffixes=("_ERP", "_MARKETPLACE"))
 
-            # Converter as colunas de prazo para números
+            # Converter prazos para números
             df_comparacao["DIAS P/ ENTREGA_ERP"] = pd.to_numeric(df_comparacao["DIAS P/ ENTREGA_ERP"], errors="coerce").fillna(0)
             df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"] = pd.to_numeric(df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"], errors="coerce").fillna(0)
 
@@ -545,18 +392,36 @@ class TelaComparacaoPrazos:
             self.root.update_idletasks()
 
             df_comparacao["DIFERENCA_PRAZO"] = df_comparacao["DIAS P/ ENTREGA_MARKETPLACE"] - df_comparacao["DIAS P/ ENTREGA_ERP"]
+###############################################################################################
 
             divergencias = df_comparacao[df_comparacao["DIFERENCA_PRAZO"] != 0]
 
-            pasta_destino = os.path.join(os.getcwd(), "COMPARACAO_PRAZOS")
-            if not os.path.exists(pasta_destino):
+            # Abrir diálogo para escolher local de salvamento
+            self.root.attributes('-topmost', False)
+            caminho_arquivo = filedialog.asksaveasfilename(
+                parent=self.root,
+                defaultextension=".xlsx",
+                filetypes=[("Arquivos Excel", "*.xlsx")],
+                title="Salvar Comparação de Prazos",
+                initialfile="Comparacao_Prazos.xlsx"
+            )
+            self.root.attributes('-topmost', True)
+
+            if not caminho_arquivo:  # Usuário cancelou
+                self.log("Operação cancelada pelo usuário.", "aviso")
+                self.progresso["value"] = 0
+                return
+
+            # Verificar se o diretório existe, criar se necessário
+            pasta_destino = os.path.dirname(caminho_arquivo)
+            if pasta_destino and not os.path.exists(pasta_destino):
                 os.makedirs(pasta_destino)
 
-            caminho_arquivo = os.path.join(pasta_destino, "Comparacao_Prazos.xlsx")
             self.log("Salvando divergências...", "info")
             self.progresso["value"] = 90
             self.root.update_idletasks()
 
+            # Salvar no local escolhido pelo usuário
             divergencias.to_excel(caminho_arquivo, index=False)
 
             self.progresso["value"] = 100
@@ -564,7 +429,6 @@ class TelaComparacaoPrazos:
 
             self.log("Produtos com divergência:", "aviso")
             for index, row in divergencias.iterrows():
-                # Exibe apenas o EAN, sem timestamp
                 self.log_area.config(state="normal")
                 self.log_area.insert(tk.END, f"{row[coluna_chave_erp]}\n", "divergencia")
                 self.log_area.config(state="disabled")
@@ -576,8 +440,9 @@ class TelaComparacaoPrazos:
             self.log(f"Total de EAN/SKUS verificados: {total_itens}", "info")
             self.log(f"Total de EAN/SKUS com divergência: {total_divergencias}", "info")
 
-            # Gerar relatório detalhado
-            self.gerar_relatorio_detalhado(df_comparacao, divergencias, marketplace, coluna_chave_erp)
+            messagebox.showinfo("Concluído", 
+                              f"Comparação de prazos finalizada com sucesso!\nArquivo salvo em:\n{caminho_arquivo}", 
+                              parent=self.root)
 
         except Exception as e:
             self.log(f"[ERRO] Ocorreu um erro durante a comparação: {e}", "erro")
@@ -587,7 +452,6 @@ class TelaComparacaoPrazos:
 
     def abrir_mapeamento_colunas(self):
         self.comparar_prazos(self.entrada_erp.get(), self.entrada_marketplace.get())
-    
 
 if __name__ == "__main__":
     root = tk.Tk()
