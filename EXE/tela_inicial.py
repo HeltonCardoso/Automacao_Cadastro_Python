@@ -16,7 +16,7 @@ class TelaPrincipal:
 
         try:
             # Para Windows
-            self.root.iconbitmap("icone.ico")  # Substitua pelo caminho do seu ícone .ico
+            self.root.iconbitmap("IMG/icone.ico")  # Substitua pelo caminho do seu ícone .ico
         except Exception as e:
             print(f"Erro ao carregar o ícone .ico: {e}")
 

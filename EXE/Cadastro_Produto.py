@@ -32,7 +32,7 @@ class TelaCadastroProduto:
 
         # Adicionar ícone à janela
         try:
-            self.root.iconbitmap("icone.ico")  # Substitua "icone.ico" pelo caminho do seu ícone
+            self.root.iconbitmap("IMG/icone.ico")  # Substitua "icone.ico" pelo caminho do seu ícone
         except:
             pass  # Ignora se o ícone não for encontrado
 

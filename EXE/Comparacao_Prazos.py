@@ -7,8 +7,8 @@ import csv
 import re
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from datetime import datetime  # Para adicionar timestamps
-
+from datetime import datetime
+from PIL import Image, ImageTk
 
 class TelaComparacaoPrazos:
     def __init__(self, root):
@@ -16,13 +16,33 @@ class TelaComparacaoPrazos:
         self.root.title("VERIFICAÇÃO DE PRAZOS V1.0")
         self.root.resizable(False, False)
         self.centralizar_janela(800, 650)
+    
+        # Frame para marketplace identificado e imagem
+        frame_marketplace = tk.Frame(self.root)
+        frame_marketplace.pack(pady=5)
+        
+        # Label para imagem do marketplace (MODIFICAÇÃO IMPORTANTE)
+        self.imagem_marketplace = tk.Label(frame_marketplace)
+        self.imagem_marketplace.pack(side=tk.LEFT, padx=5)
+        
+        # Dicionário para manter referências das imagens
+        self.imagens_carregadas = {}
 
         # Adicionar ícone à janela
         try:
-            self.root.iconbitmap("icone.ico")  # Substitua "icone.ico" pelo caminho do seu ícone
+            self.root.iconbitmap("IMG/icone.ico")
         except:
-            pass  # Ignora se o ícone não for encontrado
+            pass
 
+        # Configurar interface principal
+        self.configurar_interface()
+
+        # Agora pode carregar as imagens (log_area já existe)
+        self.imagens_marketplaces = self.carregar_imagens_marketplaces()
+
+        
+
+    def configurar_interface(self):
         # Frame principal
         frame = tk.Frame(self.root, padx=10, pady=10)
         frame.pack(fill=tk.BOTH, expand=True)
@@ -45,13 +65,27 @@ class TelaComparacaoPrazos:
         btn_buscar_marketplace.bind("<Enter>", lambda e: btn_buscar_marketplace.config(bg="#0a2040"))
         btn_buscar_marketplace.bind("<Leave>", lambda e: btn_buscar_marketplace.config(bg="#008CBA"))
 
+        # Frame para marketplace identificado e imagem
+        frame_marketplace = tk.Frame(self.root)
+        frame_marketplace.pack(pady=5)
+        
         # Label do Marketplace
-        self.label_marketplace = tk.Label(self.root, text="Marketplace: Não identificado", fg="gray", font=("Arial", 10))
-        self.label_marketplace.pack(pady=5)
-
+        self.label_marketplace = tk.Label(frame_marketplace, text="Marketplace: Não identificado", fg="gray", font=("Arial", 10))
+        self.label_marketplace.pack(side=tk.LEFT, padx=5)
+        
+        # Label para imagem do marketplace
+        self.imagem_marketplace = tk.Label(frame_marketplace)
+        self.imagem_marketplace.pack(side=tk.LEFT, padx=5)
+        self.imagem_referencia = None  # Variável para manter a referência
+        
+        
+        # Frame para o botão de comparar
+        frame_botao = tk.Frame(self.root)
+        frame_botao.pack(pady=10)
+        
         # Botão Comparar Prazos
         btn_comparar = tk.Button(
-            self.root, 
+            frame_botao, 
             text="COMPARAR PRAZOS", 
             command=self.abrir_mapeamento_colunas, 
             bg="#008CBA", 
@@ -60,10 +94,10 @@ class TelaComparacaoPrazos:
             bd=4, 
             relief=tk.FLAT
         )
-        btn_comparar.pack(pady=10)
+        btn_comparar.pack(side=tk.LEFT, padx=5)
         btn_comparar.bind("<Enter>", lambda e: btn_comparar.config(bg="#0a2040"))
         btn_comparar.bind("<Leave>", lambda e: btn_comparar.config(bg="#008CBA"))
-
+        
         # Barra de Progresso
         self.progresso = Progressbar(self.root, orient="horizontal", length=600, mode="determinate")
         self.progresso.pack(pady=5)
@@ -72,7 +106,7 @@ class TelaComparacaoPrazos:
         self.status_label = tk.Label(self.root, text="Tela de log", fg="gray", font=("Arial", 10))
         self.status_label.pack(pady=5)
 
-        # Área de Log
+        # Área de Log (agora criada antes de tentar usá-la)
         self.log_area = scrolledtext.ScrolledText(self.root, width=80, height=12, bg="white", state="disabled", font=("Courier", 10))
         self.log_area.pack(pady=10)
 
@@ -114,7 +148,7 @@ class TelaComparacaoPrazos:
         btn_fechar.bind("<Leave>", lambda e: btn_fechar.config(bg="#f44336"))
 
         # Rodapé
-        frame_rodape = tk.Frame(root)
+        frame_rodape = tk.Frame(self.root)
         frame_rodape.pack(side=tk.BOTTOM, fill=tk.X, pady=10)
 
         # Relógio no rodapé
@@ -122,49 +156,107 @@ class TelaComparacaoPrazos:
         self.relogio.pack(side=tk.RIGHT, padx=10)
         self.atualizar_relogio()
 
-    # Restante do código...
-
         # Dicionário de mapeamento de colunas por marketplace
         self.mapa_marketplaces = {
             "Wake": {
-                "cod_barra": "EAN",  # Coluna do marketplace
-                "prazo": "Prazo Manuseio (Dias)",  # Coluna do prazo
-                "chave_comparacao": "EAN",  # Chave de comparação (EAN ou SellerSku)
-                "prazo_erp": "DIAS P/ ENTREGA"  # Coluna de prazo no ERP
+                "cod_barra": "EAN",
+                "prazo": "Prazo Manuseio (Dias)",
+                "chave_comparacao": "EAN",
+                "prazo_erp": "DIAS P/ ENTREGA",
+                "imagem": "wake.png"
             },
             "Tray": {
                 "cod_barra": "EAN",
                 "prazo": "Disponibilidade",
                 "chave_comparacao": "EAN",
-                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP
+                "prazo_erp": "SITE_DISPONIBILIDADE",
+                "imagem": "tray.png"
             },
             "Shoppe": {
                 "cod_barra": "EAN_shoppe",
                 "prazo": "Disponibilidade_shoppe",
                 "chave_comparacao": "EAN",
-                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP
+                "prazo_erp": "SITE_DISPONIBILIDADE",
+                "imagem": "shoppe.png"
             },
             "Mobly": {
-                "cod_barra": "SellerSku",  # Mobly usa SellerSku
-                "prazo": "SupplierDeliveryTime",  # Coluna de prazo no marketplace
-                "chave_comparacao": "SellerSku",  # Chave de comparação é SellerSku
-                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP para Mobly
+                "cod_barra": "SellerSku",
+                "prazo": "SupplierDeliveryTime",
+                "chave_comparacao": "SellerSku",
+                "prazo_erp": "SITE_DISPONIBILIDADE",
+                "imagem": "mobly.png"
             },
             "MadeiraMadeira": {
-                "cod_barra": "EAN",  # Coluna do EAN no marketplace
-                "prazo": "Prazo expedição",  # Coluna do prazo no marketplace
-                "chave_comparacao": "EAN",  # Chave de comparação (EAN)
-                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP
+                "cod_barra": "EAN",
+                "prazo": "Prazo expedição",
+                "chave_comparacao": "EAN",
+                "prazo_erp": "SITE_DISPONIBILIDADE",
+                "imagem": "madeiramadeira.png"
             },
-            "WebContinental": {  # Novo marketplace
-                "cod_barra": "EAN",  # Coluna do EAN no WebContinental
-                "prazo": "Crossdoc",  # Coluna do prazo no WebContinental
-                "chave_comparacao": "EAN",  # Chave de comparação (EAN)
-                "prazo_erp": "SITE_DISPONIBILIDADE"  # Coluna de prazo no ERP
+            "WebContinental": {
+                "cod_barra": "EAN",
+                "prazo": "Crossdoc",
+                "chave_comparacao": "EAN",
+                "prazo_erp": "SITE_DISPONIBILIDADE",
+                "imagem": "webcontinental.png"
             }
         }
 
-    
+    def carregar_imagens_marketplaces(self):
+        """Carrega as imagens dos marketplaces da pasta IMG"""
+        imagens = {}
+        marketplaces = {
+            "Wake": "wake.png",
+            "Tray": "tray.png",
+            "Shoppe": "shoppe.png",
+            "Mobly": "mobly.png",
+            "MadeiraMadeira": "madeiramadeira.png",
+            "WebContinental": "webcontinental.png"
+        }
+        
+        try:
+            caminho_pasta_img = os.path.join(os.path.dirname(os.path.abspath(__file__)), "IMG")
+            
+            for nome, arquivo in marketplaces.items():
+                caminho_imagem = os.path.join(caminho_pasta_img, arquivo)
+                if os.path.exists(caminho_imagem):
+                    try:
+                        img = Image.open(caminho_imagem)
+                        img = img.resize((50, 50), Image.LANCZOS)
+                        photo_img = ImageTk.PhotoImage(img)
+                        
+                        # Armazena a referência da imagem
+                        imagens[nome] = photo_img
+                        # Mantém uma referência adicional
+                        if not hasattr(self, 'imagens_salvas'):
+                            self.imagens_salvas = []
+                        self.imagens_salvas.append(photo_img)
+            
+                        #self.log(f"[INFO] Imagem carregada: {arquivo}", "info")
+                    #except Exception as e:
+                       # self.log(f"[ERRO] Falha ao carregar {arquivo}: {str(e)}", "erro")
+              #  else:
+                  #  self.log(f"[AVISO] Imagem não encontrada: {arquivo}", "aviso")
+                    
+       # except Exception as e:
+         #   self.log(f"[ERRO CRÍTICO] Erro ao carregar imagens: {str(e)}", "erro")
+                    except:
+                        pass
+        except:
+            pass
+
+        return imagens
+
+    def atualizar_imagem_marketplace(self, marketplace):
+        """Atualiza a imagem do marketplace exibida na interface"""
+        if marketplace and marketplace in self.imagens_marketplaces and self.imagens_marketplaces[marketplace] is not None:
+            # Mantém a referência como atributo da classe
+            self.imagem_referencia = self.imagens_marketplaces[marketplace]
+            self.imagem_marketplace.config(image=self.imagem_referencia)
+        else:
+            self.imagem_marketplace.config(image='')
+            self.imagem_referencia = None
+
     def atualizar_relogio(self):
         agora = datetime.now()
         data_hora = agora.strftime("%d/%m/%Y %H:%M:%S")
@@ -201,17 +293,20 @@ class TelaComparacaoPrazos:
             for marketplace, colunas_mapeadas in self.mapa_marketplaces.items():
                 if colunas_mapeadas["prazo"] in colunas:
                     self.label_marketplace.config(text=f"Marketplace: {marketplace}")
+                    self.atualizar_imagem_marketplace(marketplace)  # LINHA ADICIONADA
                     return
 
-            # Verifica se é o MadeiraMadeira (caso o nome da coluna seja diferente)
             if "EAN" in colunas and "Prazo de Entrega" in colunas:
                 self.label_marketplace.config(text="Marketplace: MadeiraMadeira")
+                self.atualizar_imagem_marketplace("MadeiraMadeira")  # LINHA ADICIONADA
                 return
 
             self.label_marketplace.config(text="Marketplace: Não identificado")
+            self.atualizar_imagem_marketplace(None)  # LINHA ADICIONADA
             self.log(f"[AVISO] Não foi possível identificar o marketplace. Verifique as colunas da planilha.", "aviso")
         except Exception as e:
             self.label_marketplace.config(text="Marketplace: Erro ao identificar")
+            self.atualizar_imagem_marketplace(None)  # LINHA ADICIONADA
             self.log(f"[ERRO] Erro ao identificar o marketplace: {e}", "erro")
 
     def ler_arquivo(self, caminho):
@@ -492,6 +587,7 @@ class TelaComparacaoPrazos:
 
     def abrir_mapeamento_colunas(self):
         self.comparar_prazos(self.entrada_erp.get(), self.entrada_marketplace.get())
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
