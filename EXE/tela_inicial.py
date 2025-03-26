@@ -6,6 +6,7 @@ from Cadastro_Produto import TelaCadastroProduto
 from Comparacao_Prazos import TelaComparacaoPrazos
 from datetime import datetime
 import os
+from pathlib import Path
 
 class TelaPrincipal:
     def __init__(self, root):
@@ -40,7 +41,7 @@ class TelaPrincipal:
         menu_ajuda = tk.Menu(menu_superior, tearoff=0)
         menu_superior.add_cascade(label="Ajuda", menu=menu_ajuda)
         menu_ajuda.add_command(label="Sobre", command=self.mostrar_sobre)
-        menu_ajuda.add_command(label="Documentação", command=self.mostrar_documentacao)
+        menu_ajuda.add_command(label="Documentação", command=self.mostrar_manual_html)
 
         # Frame principal
         frame_principal = tk.Frame(root)
@@ -70,6 +71,11 @@ class TelaPrincipal:
         btn_fechar.pack(pady=10, ipadx=10, ipady=5)
         btn_fechar.bind("<Enter>", lambda e: btn_fechar.config(bg="#e53935"))  # Efeito hover
         btn_fechar.bind("<Leave>", lambda e: btn_fechar.config(bg="#f44336"))
+
+
+        # 4. Atalho F1
+        self.root.bind("<F1>", lambda e: self.criar_menu_ajuda())
+
 
         # Rodapé
         frame_rodape = tk.Frame(root)
@@ -160,21 +166,32 @@ class TelaPrincipal:
         " ** EXTRAÇÃO DE ATRIBUTOS PLANILHA ONLINE \n \n"
         " ** COMPARAÇÃO DE PRAZOS ONCLICK E MARKETPLACES.")
 
+    def mostrar_leia_me(self):
+        caminho = Path(__file__).parent / "DOCUMENTACAO" / "documentacao.txt"
+        with open(caminho, 'r', encoding='utf-8') as f:
+            conteudo = f.read()
+        
+        janela = tk.Toplevel(self.root)
+        texto = scrolledtext.ScrolledText(janela, wrap=tk.WORD, width=80, height=25)
+        texto.pack()
+        texto.insert(tk.INSERT, conteudo)
+        texto.config(state='disabled')
+    
+    def mostrar_manual_html(self):
+        import webbrowser
+        caminho = Path(__file__).parent / "DOCUMENTACAO" / "manual.html"
+        webbrowser.open(caminho.as_uri())
+
     def mostrar_documentacao(self):
         # Cria uma nova janela para exibir a documentação
         janela_documentacao = tk.Toplevel(self.root)
         janela_documentacao.title("DOCUMENTAÇÃO")
         janela_documentacao.geometry("800x600")
-
-    
-
         # Adiciona um widget ScrolledText para exibir o conteúdo
         texto_documentacao = scrolledtext.ScrolledText(janela_documentacao, wrap=tk.WORD, width=100, height=30)
         texto_documentacao.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
         # Caminho relativo para a pasta DOCUMENTAÇÃO no diretório acima
-        caminho_documentacao = os.path.join(os.path.dirname(os.path.dirname(__file__)), "DOCUMENTACAO", "documentacao.txt")
-
+        caminho_documentacao = Path(__file__).resolve().parent / "DOCUMENTACAO" / "documentacao.txt"
         # Abrir o arquivo de documentação
         with open(caminho_documentacao, "r", encoding="utf-8") as arquivo:
             conteudo = arquivo.read()
