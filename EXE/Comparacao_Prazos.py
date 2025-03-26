@@ -366,7 +366,7 @@ class TelaComparacaoPrazos:
                 mapeamento["prazo_erp"]: "DIAS P/ ENTREGA_ERP"
             }, inplace=True)
 
-            # Tratar o Tray
+            # Tratar a Tray
             if marketplace == "Tray":
                 df_marketplace["DIAS P/ ENTREGA_MARKETPLACE"] = df_marketplace["DIAS P/ ENTREGA_MARKETPLACE"].apply(self.extrair_numeros)
                 self.log(f"Valores de prazo no Tray: {df_marketplace['DIAS P/ ENTREGA_MARKETPLACE'].unique()}", "info")
@@ -381,7 +381,13 @@ class TelaComparacaoPrazos:
             df_marketplace["COD_COMPARACAO"] = df_marketplace["COD_COMPARACAO"].astype(str).str.strip()
 
             # Realizar o merge
-            df_comparacao = pd.merge(df_erp, df_marketplace, left_on=coluna_chave_erp, right_on="COD_COMPARACAO", suffixes=("_ERP", "_MARKETPLACE"))
+            df_comparacao = pd.merge(
+                df_erp,
+                df_marketplace, 
+                left_on=coluna_chave_erp,
+                right_on="COD_COMPARACAO",
+                suffixes=("_ERP", "_MARKETPLACE")
+                    )
 
             # Converter prazos para números
             df_comparacao["DIAS P/ ENTREGA_ERP"] = pd.to_numeric(df_comparacao["DIAS P/ ENTREGA_ERP"], errors="coerce").fillna(0)

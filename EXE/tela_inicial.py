@@ -41,7 +41,7 @@ class TelaPrincipal:
         menu_ajuda = tk.Menu(menu_superior, tearoff=0)
         menu_superior.add_cascade(label="Ajuda", menu=menu_ajuda)
         menu_ajuda.add_command(label="Sobre", command=self.mostrar_sobre)
-        menu_ajuda.add_command(label="Documentação", command=self.mostrar_manual_html)
+        menu_ajuda.add_command(label="Manual de uso", command=self.mostrar_manual_html)
 
         # Frame principal
         frame_principal = tk.Frame(root)
