@@ -5,8 +5,9 @@ from Extracao_Atributos import TelaExtracaoAtributos
 from Cadastro_Produto import TelaCadastroProduto
 from Comparacao_Prazos import TelaComparacaoPrazos
 from datetime import datetime
-import os
 from pathlib import Path
+import sys
+import os
 
 class TelaPrincipal:
     def __init__(self, root):
@@ -22,8 +23,8 @@ class TelaPrincipal:
         self.centralizar_janela(500, 350)  # Ajuste a altura para acomodar o relógio
 
         try:
-            # Para Windows
-            self.root.iconbitmap("IMG/icone.ico")  # Substitua pelo caminho do seu ícone .ico
+            icon_path = self.get_resource_path("IMG/icone.ico")
+            self.root.iconbitmap(icon_path)
         except Exception as e:
             print(f"Erro ao carregar o ícone .ico: {e}")
 
@@ -89,6 +90,16 @@ class TelaPrincipal:
         self.relogio = tk.Label(frame_rodape, font=("Arial", 8), fg="gray")
         self.relogio.pack(side=tk.RIGHT, padx=10)
         self.atualizar_relogio()
+    
+    def get_resource_path(self, relative_path):
+        """Obtém o caminho absoluto para recursos, funcionando em desenvolvimento e no .exe"""
+        try:
+            # PyInstaller cria uma pasta temporária no _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        
+        return os.path.join(base_path, relative_path)
 
     def centralizar_janela(self, largura, altura):
         largura_tela = self.root.winfo_screenwidth()
