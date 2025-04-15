@@ -1,143 +1,129 @@
 import pandas as pd
+import os
+from tkinter import filedialog
+from tkinter import Tk
 
 def verificar_medidas_e_pesos(planilha):
     """
     Verifica produtos com:
-    - Altura, largura e profundidade devem estar em 'cm'
-    - Peso e peso suportado devem estar em 'kg'
-    - Ignora o atributo "Com altura ajustável"
+    - Medidas em 'cm' (altura, largura, profundidade)
+    - Pesos em 'kg' (peso, peso suportado)
+    - Tamanho de TV em Número" (ex: 70")
+    - Gera relatório de "Formato do Móvel" com Nome do Produto
     
     Args:
-        planilha (str): Caminho do arquivo Excel ou CSV com os dados
+        planilha (str): Caminho do arquivo Excel ou CSV
         
     Returns:
-        DataFrame: Produtos com divergências nas medidas
+        tuple: (DataFrame com erros, DataFrame com formato dos móveis)
     """
-    
-    # Carregar a planilha
     try:
-        if planilha.endswith('.xlsx') or planilha.endswith('.xls'):
+        # Carregar a planilha
+        if planilha.endswith(('.xlsx', '.xls')):
             df = pd.read_excel(planilha)
         else:
             df = pd.read_csv(planilha, delimiter=';')
     except Exception as e:
         print(f"Erro ao carregar arquivo: {e}")
-        return None
-    
-    # Verificar se existe coluna SKU
-    if 'SKU' not in df.columns:
-        print("Coluna 'SKU' não encontrada na planilha")
-        return None
-    
-    # Encontrar colunas de atributos
-    atributos_nomes = [col for col in df.columns if col.startswith('NomeAtributo')]
-    atributos_valores = [col for col in df.columns if col.startswith('ValorAtributo')]
-    
-    if not atributos_nomes or not atributos_valores:
-        print("Estrutura de atributos não encontrada (esperado colunas NomeAtributoX/ValorAtributoX)")
-        return None
-    
-    # Dicionário para armazenar os resultados
+        return None, None
+
+    # Verificar colunas obrigatórias
+    colunas_obrigatorias = ['SKU', 'Nome']
+    for col in colunas_obrigatorias:
+        if col not in df.columns:
+            print(f"Coluna '{col}' não encontrada na planilha")
+            return None, None
+
+    # Inicializar listas de resultados
     produtos_com_erros = []
-    
-    # Mapeamento de atributos e unidades esperadas
-    regras_validacao = {
-        'altura': 'cm',
-        'largura': 'cm',
-        'profundidade': 'cm',
-        'peso': 'kg',
-        'peso suportado': 'kg',
-        'peso_suportado': 'kg'
-    }
-    
-    # Atributos para ignorar
-    atributos_ignorar = ['com altura ajustável', 'altura ajustável']
-    
-    # Analisar cada produto
-    for idx, row in df.iterrows():
+    produtos_com_formato = []
+
+    # Procurar colunas de atributos
+    cols_nome_atrib = [c for c in df.columns if c.startswith('NomeAtributo')]
+    cols_valor_atrib = [c for c in df.columns if c.startswith('ValorAtributo')]
+
+    if not cols_nome_atrib or not cols_valor_atrib:
+        print("Colunas de atributos não encontradas (NomeAtributoX/ValorAtributoX)")
+        return None, None
+
+    # Processar cada produto
+    for _, row in df.iterrows():
         sku = row['SKU']
-        erros_produto = []
-        
-        # Verificar cada par de atributo/valor
-        for nome_col, valor_col in zip(atributos_nomes, atributos_valores):
-            nome_atributo = str(row[nome_col]).lower().strip() if pd.notna(row[nome_col]) else ''
-            valor_atributo = str(row[valor_col]).lower().strip() if pd.notna(row[valor_col]) else ''
-            
-            # Pular atributos na lista de ignorados
-            if any(ignorar in nome_atributo for ignorar in atributos_ignorar):
-                continue
-            
-            # Verificar se o atributo está nas regras de validação
-            for atributo_chave, unidade_correta in regras_validacao.items():
-                if atributo_chave in nome_atributo:
-                    # Verificar unidade
-                    if unidade_correta not in valor_atributo:
-                        # Verificar se tem unidade errada
-                        unidade_errada = 'kg' if unidade_correta == 'cm' else 'cm'
-                        if unidade_errada in valor_atributo:
-                            erros_produto.append({
-                                'Atributo': row[nome_col],  # Nome original (não lower)
-                                'Valor': row[valor_col],    # Valor original (não lower)
-                                'Erro': f"Unidade {unidade_errada} (deveria ser {unidade_correta})"
-                            })
-                        elif valor_atributo.replace('.', '').isdigit():
-                            erros_produto.append({
-                                'Atributo': row[nome_col],
-                                'Valor': row[valor_col],
-                                'Erro': f"Unidade faltando (adicionar '{unidade_correta}')"
-                            })
-                    break
-        
-        # Adicionar ao resultado se houver erros
-        if erros_produto:
-            for erro in erros_produto:
-                produtos_com_erros.append({
+        nome_produto = row['Nome']
+
+        # Procurar por "Formato do Móvel"
+        for nome_col, valor_col in zip(cols_nome_atrib, cols_valor_atrib):
+            nome_atrib = str(row[nome_col]).lower().strip()
+            valor_atrib = str(row[valor_col]).strip() if pd.notna(row[valor_col]) else ''
+
+            if 'formato do móvel' in nome_atrib and valor_atrib:
+                produtos_com_formato.append({
                     'SKU': sku,
-                    'Atributo': erro['Atributo'],
-                    'Valor': erro['Valor'],
-                    'Erro': erro['Erro']
+                    'Nome do Produto': nome_produto,
+                    'Atributo': row[nome_col],  # Nome original
+                    'Valor': valor_atrib
                 })
+
+    # Converter para DataFrames
+    df_erros = pd.DataFrame(produtos_com_erros) if produtos_com_erros else pd.DataFrame()
+    df_formato = pd.DataFrame(produtos_com_formato) if produtos_com_formato else pd.DataFrame()
+
+    return df_erros, df_formato
+
+def exportar_relatorios(erros, formato):
+    """Exporta todos os relatórios para Excel"""
+    if erros.empty and formato.empty:
+        print("Nenhum dado para exportar")
+        return
+
+    root = Tk()
+    root.withdraw()
+    pasta = filedialog.askdirectory(title="Selecione a pasta para salvar os relatórios")
     
-    return pd.DataFrame(produtos_com_erros)
+    if not pasta:
+        print("Exportação cancelada")
+        return
 
-# (Funções exportar_relatorio e __main__ continuam iguais ao script anterior)
+    # Exportar relatório de formato do móvel (sempre que houver dados)
+    if not formato.empty:
+        caminho_formato = os.path.join(pasta, "relatorio_formato_moveis.xlsx")
+        formato.to_excel(caminho_formato, index=False)
+        print(f"\nRelatório de formato salvo em:\n{caminho_formato}")
 
-# Função para exportar relatório organizado
-def exportar_relatorio(resultado):
-    if not resultado.empty:
-        # Agrupar erros por SKU
-        relatorio = resultado.groupby('SKU').apply(
+    # Exportar relatórios de erros (se existirem)
+    if not erros.empty:
+        caminho_erros = os.path.join(pasta, "produtos_com_erros.xlsx")
+        erros.to_excel(caminho_erros, index=False)
+        
+        # Relatório consolidado
+        relatorio = erros.groupby('SKU').apply(
             lambda x: "\n".join(f"{row['Atributo']}: {row['Valor']} ({row['Erro']})" 
                               for _, row in x.iterrows())
-        ).reset_index()
-        relatorio.columns = ['SKU', 'Erros']
-        return relatorio
-    return pd.DataFrame()
+        ).reset_index(name='Erros')
+        
+        caminho_consolidado = os.path.join(pasta, "relatorio_consolidado.xlsx")
+        relatorio.to_excel(caminho_consolidado, index=False)
+        
+        print(f"\nRelatórios de erros salvos em:\n{caminho_erros}\n{caminho_consolidado}")
 
-# Uso do script
 if __name__ == "__main__":
-    caminho_planilha = input("Digite o caminho da planilha: ")
-    produtos_com_erros = verificar_medidas_e_pesos(caminho_planilha)
-    
-    if produtos_com_erros is not None:
-        if not produtos_com_erros.empty:
-            print("\nProdutos com divergências nas medidas:")
-            print(produtos_com_erros)
-            
-            # Relatório organizado
-            relatorio = exportar_relatorio(produtos_com_erros)
-            print("\nRelatório consolidado:")
-            print(relatorio)
-            
-            # Opção para exportar resultados
-            exportar = input("\nDeseja exportar os resultados? (s/n): ").lower()
-            if exportar == 's':
-                nome_erros = "produtos_com_erros.xlsx"
-                produtos_com_erros.to_excel(nome_erros, index=False)
-                
-                nome_relatorio = "relatorio_consolidado.xlsx"
-                relatorio.to_excel(nome_relatorio, index=False)
-                
-                print(f"Resultados exportados:\n- Detalhado: {nome_erros}\n- Consolidado: {nome_relatorio}")
+    caminho = input("Digite o caminho da planilha: ")
+    df_erros, df_formato = verificar_medidas_e_pesos(caminho)
+
+    # Mostrar resultados
+    if df_formato is not None:
+        if not df_formato.empty:
+            print("\n=== Produtos com Formato do Móvel ===")
+            print(df_formato[['SKU', 'Nome do Produto', 'Atributo', 'Valor']])
         else:
-            print("Nenhum produto com divergências nas medidas encontrado.")
+            print("\nNenhum produto com 'Formato do Móvel' encontrado")
+
+        if not df_erros.empty:
+            print("\n=== Produtos com Erros ===")
+            print(df_erros)
+        else:
+            print("\nNenhum erro encontrado nas medidas")
+
+        # Exportar
+        if input("\nExportar resultados? (s/n): ").lower() == 's':
+            exportar_relatorios(df_erros, df_formato)

@@ -289,6 +289,13 @@ class TelaCadastroProduto:
                 categoria = row["CATEGORIA"]
                 grupo = row["GRUPO"]
                 nome_ecommerce = row["NOMEE-COMMERCE"]
+                # Extrair marca web (última palavra após o hífen no nome e-commerce)
+                marca_web = ""
+                if isinstance(nome_ecommerce, str) and "-" in nome_ecommerce:
+                # Pega a última parte após o último hífen e remove espaços
+                    marca_web = nome_ecommerce.split("-")[-1].strip()
+                    
+                complemento = row["COMPLEMENTO"]
                 disponibilidade_web = row["DISPONIBILIDADEWEB"]
                 descricao_html = row["DESCRICAOHTML"]
                 peso_bruto = row["PESOBRUTO"]
@@ -317,9 +324,9 @@ class TelaCadastroProduto:
                 # Adicionar dados ao dicionário de listas
                 dados_sheets["PRODUTO"].append([
                     ean, cod_forn, tipo_produto_valor, nome_onclick, nome_reduzido, nome_onclick, nome_onclick, "",
-                    marca, categoria, grupo, "", "", nome_ecommerce, "", "", "F", "F", "F", "", volumes,
+                    marca, categoria, grupo, "", "", complemento, "", "", "F", "F", "F", "", volumes,
                     peso_bruto_final, peso_liquido_final, largura_final, altura_final, comprimento_final, "", 90, 1000,
-                    disponibilidade_web, "F", "F", ncm, "", "0", "T", "F", "F", "NAO", nome_ecommerce, marca,
+                    disponibilidade_web, "F", "F", ncm, "", "0", "T", "F", "F", "NAO", nome_ecommerce, marca_web,
                     "90 dias após o recebimento do produto", disponibilidade_web, descricao_html, "F", "F"
                 ])
 
@@ -350,7 +357,7 @@ class TelaCadastroProduto:
                 ])
 
                 dados_sheets["LOJA WEB"].append([
-                    ean, "", "", "", row["CATEGORIAPRINCIPALTRAY"], "", "", "", "T", "T", "", "", "",
+                    ean, "", "", "", row["CATEGORIAPRINCIPALTRAY"], "", "", "", "T", "F", "", "", "",
                     row["CATEGORIAPRINCIPALCORP"], row["NIVELADICIONAL1CORP"], "", "", "T", "T"
                 ])
 
