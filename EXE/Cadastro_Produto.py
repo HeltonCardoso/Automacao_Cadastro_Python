@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from tkinter.ttk import Progressbar
 from datetime import datetime
+from openpyxl.styles import NamedStyle
 
 # Suprimir o warning específico do openpyxl
 warnings.filterwarnings("ignore", message="Data Validation extension is not supported and will be removed")
@@ -204,7 +205,47 @@ class TelaCadastroProduto:
 
         try:
             caminho_arquivo_salvo = self.executar_processamento(planilha_origem, planilha_destino)
-            messagebox.showinfo("Sucesso", f"Cadastro realizado com sucesso!\nArquivo salvo em:\n{caminho_arquivo_salvo}", parent=self.root)
+            
+            # Criar uma janela de mensagem personalizada
+            msg_box = tk.Toplevel(self.root)
+            msg_box.title("Sucesso")
+            msg_box.resizable(False, False)
+            msg_box.transient(self.root)  # Define como janela filha
+            msg_box.grab_set()  # Modal
+            
+            # Centralizar a janela de mensagem
+            largura_janela = 500
+            altura_janela = 150
+            pos_x = self.root.winfo_x() + (self.root.winfo_width() // 2) - (largura_janela // 2)
+            pos_y = self.root.winfo_y() + (self.root.winfo_height() // 2) - (altura_janela // 2)
+            msg_box.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+            
+            # Adicionar conteúdo
+            tk.Label(msg_box, text="Cadastro realizado com sucesso!", font=("Arial", 12)).pack(pady=10)
+            tk.Label(msg_box, text=f"Arquivo salvo em:\n{caminho_arquivo_salvo}", wraplength=450).pack()
+            
+            # Frame para os botões
+            frame_botoes = tk.Frame(msg_box)
+            frame_botoes.pack(pady=10)
+            
+            # Botão OK
+            btn_ok = tk.Button(
+                frame_botoes, 
+                text="OK", 
+                command=msg_box.destroy,
+                width=10
+            )
+            btn_ok.pack(side=tk.LEFT, padx=5)
+            
+            # Botão Abrir Arquivo
+            btn_abrir = tk.Button(
+                frame_botoes, 
+                text="Abrir Arquivo", 
+                command=lambda: self.abrir_arquivo(caminho_arquivo_salvo, msg_box),
+                width=10
+            )
+            btn_abrir.pack(side=tk.LEFT, padx=5)
+            
         except Exception as e:
             messagebox.showerror("Erro", f"Ocorreu um erro durante o processamento: {e}", parent=self.root)
 
@@ -227,6 +268,21 @@ class TelaCadastroProduto:
         self.root.focus_force()
         
         return caminho
+    
+    def abrir_arquivo(self, caminho_arquivo, janela_pai=None):
+                """Abre o arquivo no aplicativo padrão do sistema."""
+                try:
+                    if os.path.exists(caminho_arquivo):
+                        os.startfile(caminho_arquivo)  # Para Windows
+                    else:
+                        messagebox.showwarning("Aviso", "O arquivo não foi encontrado!", parent=self.root)
+                    
+                    if janela_pai:
+                        janela_pai.destroy()
+                except Exception as e:
+                    messagebox.showerror("Erro", f"Não foi possível abrir o arquivo: {e}", parent=self.root)
+                    if janela_pai:
+                        janela_pai.destroy()
     
 
     def executar_processamento(self, planilha_origem, planilha_destino):
@@ -265,13 +321,13 @@ class TelaCadastroProduto:
 
             # Formatar a nova data no mesmo formato
             data_formatada_mais_20_anos = data_mais_20_anos.strftime("%d/%m/%Y")
-
+        
             for idx, row in df.iterrows():
                 ean = str(row["EAN"]).strip()
                 tipo_produto = row["TIPODEPRODUTO"].strip().upper()
-                descricao = row["PRODUTO"]
-                quantidade = row["QTDECOMPONENTES"]
-                cor = row["COR"]
+                #descricao = row["PRODUTO"]
+                #quantidade = row["QTDECOMPONENTES"]
+                #cor = row["COR"]
                 altura = row["EMBALTURA"]
                 largura = row["EMBLARGURA"]
                 comprimento = row["EMBCOMPRIMENTO"]
@@ -283,13 +339,13 @@ class TelaCadastroProduto:
                 preco_promo = row["POR"]
                 fornecedor = row["FORNECEDOR"]
                 outros = row["OUTROS"]
+                frete  = row["FRETE"]
                 ncm = row["NCM"]
                 cod_forn = row["CODFORN"]
                 nome_onclick = row["NOMEONCLICK"]
                 categoria = row["CATEGORIA"]
                 grupo = row["GRUPO"]
                 nome_ecommerce = row["NOMEE-COMMERCE"]
-                # Extrair marca web (última palavra após o hífen no nome e-commerce)
                 marca_web = ""
                 if isinstance(nome_ecommerce, str) and "-" in nome_ecommerce:
                 # Pega a última parte após o último hífen e remove espaços
@@ -305,15 +361,11 @@ class TelaCadastroProduto:
                 vol_largura = row["VOLLARGURA"]
                 vol_altura = row["VOLALTURA"]
                 vol_comprimento = row["VOLCOMPRIMENTO"]
-
                 tipo_produto_valor = 0 if tipo_produto == "PRODUTO ACABADO" else 2
-
                 # Regra: Nome do produto (5ª coluna) com apenas 25 caracteres
                 nome_reduzido = nome_onclick[:25] if isinstance(nome_onclick, str) else ""
-
                 # Adicionar marca ao conjunto
                 marcas_cadastradas.add(marca)
-
                 # Usar sempre as medidas PESOBRUTO, PESOLIQUIDO, EMBLARGURA, EMBALTURA, EMBCOMPRIMENTO para a aba "PRODUTO"
                 peso_bruto_final = peso_bruto
                 peso_liquido_final = peso_liquido
@@ -323,10 +375,10 @@ class TelaCadastroProduto:
 
                 # Adicionar dados ao dicionário de listas
                 dados_sheets["PRODUTO"].append([
-                    ean, cod_forn, tipo_produto_valor, nome_onclick, nome_reduzido, nome_onclick, nome_onclick, "",
-                    marca, categoria, grupo, "", "", complemento, "", "", "F", "F", "F", "", volumes,
-                    peso_bruto_final, peso_liquido_final, largura_final, altura_final, comprimento_final, "", 90, 1000,
-                    disponibilidade_web, "F", "F", ncm, "", "0", "T", "F", "F", "NAO", nome_ecommerce, marca_web,
+                    ean, cod_forn, tipo_produto_valor, nome_onclick, nome_reduzido, nome_onclick, nome_onclick, None,
+                    marca, categoria, grupo, None, None, complemento, None, None, "F", "F", "F", None, volumes,
+                    peso_bruto_final, peso_liquido_final, largura_final, altura_final, comprimento_final, None, 90, 1000,
+                    disponibilidade_web, "F", "F", ncm, None, "0", "T", "F", "F", "NAO", nome_ecommerce, marca_web,
                     "90 dias após o recebimento do produto", disponibilidade_web, descricao_html, "F", "F"
                 ])
 
@@ -352,7 +404,7 @@ class TelaCadastroProduto:
                         ])
 
                 dados_sheets["PRECO"].append([
-                    ean, fornecedor, custo, outros, "", "", row["CUSTOTOTAL"], preco_venda, preco_promo, preco_promo,
+                    ean, fornecedor, custo, outros, "", frete, row["CUSTOTOTAL"], preco_venda, preco_promo, preco_promo,
                     data_formatada, data_formatada_mais_20_anos, "", "F"
                 ])
 
@@ -369,6 +421,10 @@ class TelaCadastroProduto:
 
             # Carregar a planilha original mantendo formatação
             wb = load_workbook(planilha_destino)
+            # Cria um estilo personalizado "aspas_invisiveis"
+            estilo_invisivel = NamedStyle(name="aspas_invisiveis")
+            estilo_invisivel.number_format = '@'  # Formato texto
+            wb.add_named_style(estilo_invisivel)
 
             # Obter a aba "Tipo Importacao" e copiar as validações antes de salvar
             ws_tipo_importacao = wb["Tipo Importacao"]
@@ -393,6 +449,18 @@ class TelaCadastroProduto:
                 for i, row_data in enumerate(data, start=start_row):
                     for j, value in enumerate(row_data, start=1):
                         ws.cell(row=i, column=j, value=value)
+            
+            # [6] --- BLOCO DE PÓS-PROCESSAMENTO (NOVO) ---
+            for row in ws.iter_rows(min_row=start_row):
+                for cell in row:
+                    if cell.value == "'":
+                        # Aplica o estilo especial
+                        cell.style = "aspas_invisiveis"
+                        # Força o Excel a tratar como texto literal
+                        cell.value = "'"
+                        # Remove qualquer formatação visual
+                        cell.fill = None    # Sem preenchimento
+
 
             # Gerar o nome do novo arquivo com a marca
             if marcas_cadastradas:
